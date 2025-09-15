@@ -5,6 +5,7 @@ import (
 	"go-fiber/app/model"
 	"go-fiber/app/repository"
 	"go-fiber/helper"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -47,6 +48,9 @@ func LoginService(c *fiber.Ctx, db *sql.DB) error {
 
 	// Verify password
 	if !helper.CheckPassword(loginReq.Password, passwordHash) {
+		// Log failed login attempt
+		log.Printf("[AUTH] Failed login attempt for username: %s from IP: %s", loginReq.Username, c.IP())
+		
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
 			"message": "Username atau password salah",
@@ -63,6 +67,9 @@ func LoginService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
+	// Log successful login
+	log.Printf("[AUTH] Successful login for user: %s (role: %s) from IP: %s", user.Username, user.Role, c.IP())
+	
 	// Create response
 	loginResponse := model.LoginResponse{
 		User:  *user,

@@ -1,0 +1,30 @@
+# Build files
+*.exe
+*.out
+alumni-api*
+
+# Environment files
+.env
+.env.local
+
+# Logs
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+go.work
+go.work.sum
+
+# Test coverage
+*.coverage
+coverage.html
