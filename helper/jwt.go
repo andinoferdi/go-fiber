@@ -2,19 +2,25 @@ package helper
 
 import (
 	"go-fiber/app/model"
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// getJWTSecret returns JWT secret key from environment or default
+// getJWTSecret returns JWT secret key from environment - REQUIRED!
 func getJWTSecret() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		// Default secret untuk development - dalam produksi harus menggunakan ENV
-		secret = "your-secret-key-min-32-characters-long-for-alumni-api"
+		log.Fatal("SECURITY ERROR: JWT_SECRET environment variable is required but not set! Please add JWT_SECRET to your .env file")
 	}
+	
+	// Validate minimum length for security
+	if len(secret) < 32 {
+		log.Fatal("SECURITY ERROR: JWT_SECRET must be at least 32 characters long for security")
+	}
+	
 	return []byte(secret)
 }
 
