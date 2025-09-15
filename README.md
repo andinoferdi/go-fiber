@@ -7,58 +7,21 @@ Sistem manajemen data alumni dan riwayat pekerjaan yang dibangun dengan Go Fiber
 Sebelum menjalankan aplikasi, Anda perlu menyiapkan database PostgreSQL terlebih dahulu.
 
 1. Buat database baru dengan nama `alumni_db`
-2. Import schema dan data awal dari file `database/schema.sql`
-3. Import schema authentication dari file `database/auth_schema.sql`
-4. Pastikan PostgreSQL service sudah berjalan
 
-### Schema Authentication
-
-**Opsi 1: Setup Lengkap (Recommended)**
-Jalankan file `database/setup_complete.sql` yang berisi semua tabel dan data sample:
-
-```bash
-psql -d alumni_db -f database/setup_complete.sql
-```
-
-**Opsi 2: Setup Manual**
-Jalankan file secara terpisah:
-1. `database/Alumni&Pekerjaan.sql` - Tabel alumni dan pekerjaan
-2. `database/Auth.sql` - Tabel authentication
-
-```bash
-psql -d alumni_db -f database/Alumni\&Pekerjaan.sql
-psql -d alumni_db -f database/Auth.sql
-```
-
-**User Accounts untuk Testing:**
-- **admin** / password: `123456` / role: admin
-- **user1** / password: `123456` / role: user  
-- **user2** / password: `123456` / role: user
 
 ## Konfigurasi Environment
 
-Buat file `.env` di root directory dengan konfigurasi berikut:
+Buat file `.env` di root directory seperti env_example:
 
-```env
-# Konfigurasi Database PostgreSQL
-DB_DSN=postgres://username:password@localhost:5432/alumni_db?sslmode=disable
-
-# Port aplikasi (opsional, default: 3000)
-APP_PORT=3000
-
-# JWT Secret Key (minimum 32 characters)
-JWT_SECRET=AlumniAPI2025!@#$%^&*()_+SecretKeyMin32Chars
-```
 
 Sesuaikan username, password, dan host database dengan konfigurasi PostgreSQL Anda.
 
 ## Cara Menjalankan Aplikasi
 
 ```bash
-# Download dependencies
+
 go mod tidy
 
-# Jalankan server
 go run main.go
 ```
 
