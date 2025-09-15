@@ -1,0 +1,187 @@
+package service
+
+import (
+	"database/sql"
+	"go-fiber/app/model"
+	"go-fiber/app/repository"
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+// GetAllAlumniService - Service untuk mengambil semua data alumni
+func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	alumni, err := repository.GetAllAlumni(db)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil data alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Berhasil mengambil semua data alumni",
+		"success": true,
+		"data":    alumni,
+	})
+}
+
+// GetAlumniByIDService - Service untuk mengambil data alumni berdasarkan ID
+func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID tidak valid",
+			"success": false,
+		})
+	}
+
+	alumni, err := repository.GetAlumniByID(db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Alumni tidak ditemukan",
+				"success": false,
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil data alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Berhasil mengambil data alumni",
+		"success": true,
+		"data":    alumni,
+	})
+}
+
+// CreateAlumniService - Service untuk menambah alumni baru
+func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	var alumni model.Alumni
+	if err := c.BodyParser(&alumni); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Format data tidak valid: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	// Validasi field wajib
+	if alumni.NIM == "" || alumni.Nama == "" || alumni.Jurusan == "" || alumni.Email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Field NIM, Nama, Jurusan, dan Email wajib diisi",
+			"success": false,
+		})
+	}
+
+	if err := repository.CreateAlumni(db, &alumni); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal menambah alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Berhasil menambah alumni",
+		"success": true,
+		"data":    alumni,
+	})
+}
+
+// UpdateAlumniService - Service untuk mengupdate data alumni
+func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID tidak valid",
+			"success": false,
+		})
+	}
+
+	var alumni model.Alumni
+	if err := c.BodyParser(&alumni); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Format data tidak valid: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	// Validasi field wajib
+	if alumni.NIM == "" || alumni.Nama == "" || alumni.Jurusan == "" || alumni.Email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Field NIM, Nama, Jurusan, dan Email wajib diisi",
+			"success": false,
+		})
+	}
+
+	// Cek apakah alumni ada
+	_, err = repository.GetAlumniByID(db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Alumni tidak ditemukan",
+				"success": false,
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengecek data alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	if err := repository.UpdateAlumni(db, id, &alumni); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengupdate alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	alumni.ID = id
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Berhasil mengupdate alumni",
+		"success": true,
+		"data":    alumni,
+	})
+}
+
+// DeleteAlumniService - Service untuk menghapus data alumni
+func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID tidak valid",
+			"success": false,
+		})
+	}
+
+	// Cek apakah alumni ada
+	_, err = repository.GetAlumniByID(db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Alumni tidak ditemukan",
+				"success": false,
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengecek data alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	if err := repository.DeleteAlumni(db, id); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal menghapus alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Berhasil menghapus alumni",
+		"success": true,
+	})
+}

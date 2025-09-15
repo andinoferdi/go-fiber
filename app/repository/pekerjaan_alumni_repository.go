@@ -1,0 +1,85 @@
+package repository
+
+import (
+	"database/sql"
+	"go-fiber/app/model"
+	"time"
+)
+
+// GetAllPekerjaanAlumni - Ambil semua data pekerjaan alumni
+func GetAllPekerjaanAlumni(db *sql.DB) ([]model.PekerjaanAlumni, error) {
+	query := `SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, created_at, updated_at FROM pekerjaan_alumni ORDER BY created_at DESC`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pekerjaanList []model.PekerjaanAlumni
+	for rows.Next() {
+		var p model.PekerjaanAlumni
+		err := rows.Scan(&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri, &p.LokasiKerja, &p.GajiRange, &p.TanggalMulaiKerja, &p.TanggalSelesaiKerja, &p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		pekerjaanList = append(pekerjaanList, p)
+	}
+	return pekerjaanList, nil
+}
+
+// GetPekerjaanAlumniByID - Ambil data pekerjaan berdasarkan ID
+func GetPekerjaanAlumniByID(db *sql.DB, id int) (*model.PekerjaanAlumni, error) {
+	pekerjaan := new(model.PekerjaanAlumni)
+	query := `SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, created_at, updated_at FROM pekerjaan_alumni WHERE id = $1`
+	err := db.QueryRow(query, id).Scan(&pekerjaan.ID, &pekerjaan.AlumniID, &pekerjaan.NamaPerusahaan, &pekerjaan.PosisiJabatan, &pekerjaan.BidangIndustri, &pekerjaan.LokasiKerja, &pekerjaan.GajiRange, &pekerjaan.TanggalMulaiKerja, &pekerjaan.TanggalSelesaiKerja, &pekerjaan.StatusPekerjaan, &pekerjaan.DeskripsiPekerjaan, &pekerjaan.CreatedAt, &pekerjaan.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return pekerjaan, nil
+}
+
+// GetPekerjaanByAlumniID - Ambil semua pekerjaan berdasarkan alumni ID
+func GetPekerjaanByAlumniID(db *sql.DB, alumniID int) ([]model.PekerjaanAlumni, error) {
+	query := `SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, created_at, updated_at FROM pekerjaan_alumni WHERE alumni_id = $1 ORDER BY tanggal_mulai_kerja DESC`
+	rows, err := db.Query(query, alumniID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pekerjaanList []model.PekerjaanAlumni
+	for rows.Next() {
+		var p model.PekerjaanAlumni
+		err := rows.Scan(&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri, &p.LokasiKerja, &p.GajiRange, &p.TanggalMulaiKerja, &p.TanggalSelesaiKerja, &p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		pekerjaanList = append(pekerjaanList, p)
+	}
+	return pekerjaanList, nil
+}
+
+// CreatePekerjaanAlumni - Tambah pekerjaan baru
+func CreatePekerjaanAlumni(db *sql.DB, pekerjaan *model.PekerjaanAlumni) error {
+	query := `INSERT INTO pekerjaan_alumni (alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, updated_at) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+			  RETURNING id, created_at`
+	pekerjaan.UpdatedAt = time.Now()
+	err := db.QueryRow(query, pekerjaan.AlumniID, pekerjaan.NamaPerusahaan, pekerjaan.PosisiJabatan, pekerjaan.BidangIndustri, pekerjaan.LokasiKerja, pekerjaan.GajiRange, pekerjaan.TanggalMulaiKerja, pekerjaan.TanggalSelesaiKerja, pekerjaan.StatusPekerjaan, pekerjaan.DeskripsiPekerjaan, pekerjaan.UpdatedAt).Scan(&pekerjaan.ID, &pekerjaan.CreatedAt)
+	return err
+}
+
+// UpdatePekerjaanAlumni - Update data pekerjaan
+func UpdatePekerjaanAlumni(db *sql.DB, id int, pekerjaan *model.PekerjaanAlumni) error {
+	query := `UPDATE pekerjaan_alumni SET alumni_id = $1, nama_perusahaan = $2, posisi_jabatan = $3, bidang_industri = $4, lokasi_kerja = $5, gaji_range = $6, tanggal_mulai_kerja = $7, tanggal_selesai_kerja = $8, status_pekerjaan = $9, deskripsi_pekerjaan = $10, updated_at = $11 WHERE id = $12`
+	pekerjaan.UpdatedAt = time.Now()
+	_, err := db.Exec(query, pekerjaan.AlumniID, pekerjaan.NamaPerusahaan, pekerjaan.PosisiJabatan, pekerjaan.BidangIndustri, pekerjaan.LokasiKerja, pekerjaan.GajiRange, pekerjaan.TanggalMulaiKerja, pekerjaan.TanggalSelesaiKerja, pekerjaan.StatusPekerjaan, pekerjaan.DeskripsiPekerjaan, pekerjaan.UpdatedAt, id)
+	return err
+}
+
+// DeletePekerjaanAlumni - Hapus data pekerjaan
+func DeletePekerjaanAlumni(db *sql.DB, id int) error {
+	query := `DELETE FROM pekerjaan_alumni WHERE id = $1`
+	_, err := db.Exec(query, id)
+	return err
+}
