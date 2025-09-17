@@ -5,13 +5,38 @@ import (
 	"go-fiber/app/model"
 	"go-fiber/app/repository"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-// GetAllAlumniService - Service untuk mengambil semua data alumni
+// GetAllAlumniService - Service untuk mengambil semua data alumni dengan pagination, sorting, dan search
 func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
-	alumni, err := repository.GetAllAlumni(db)
+	// Parse query parameters
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	sortBy := c.Query("sortBy", "id")
+	order := c.Query("order", "asc")
+	search := c.Query("search", "")
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Validasi input
+	sortByWhitelist := map[string]bool{
+		"id": true, "nim": true, "nama": true, "jurusan": true, 
+		"angkatan": true, "tahun_lulus": true, "email": true, "created_at": true,
+	}
+	if !sortByWhitelist[sortBy] {
+		sortBy = "id"
+	}
+
+	if strings.ToLower(order) != "desc" {
+		order = "asc"
+	}
+
+	// Ambil data dari repository dengan pagination
+	alumni, err := repository.GetAlumniWithPagination(db, search, sortBy, order, limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Gagal mengambil data alumni: " + err.Error(),
@@ -19,10 +44,34 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
+	// Hitung total data
+	total, err := repository.CountAlumni(db, search)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal menghitung total data alumni: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	// Buat response dengan pagination
+	response := model.AlumniResponse{
+		Data: alumni,
+		Meta: model.MetaInfo{
+			Page:   page,
+			Limit:  limit,
+			Total:  total,
+			Pages:  (total + limit - 1) / limit,
+			SortBy: sortBy,
+			Order:  order,
+			Search: search,
+		},
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Berhasil mengambil semua data alumni",
+		"message": "Berhasil mengambil data alumni",
 		"success": true,
-		"data":    alumni,
+		"data":    response.Data,
+		"meta":    response.Meta,
 	})
 }
 

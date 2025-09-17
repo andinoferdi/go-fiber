@@ -5,13 +5,39 @@ import (
 	"go-fiber/app/model"
 	"go-fiber/app/repository"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-// GetAllPekerjaanAlumniService - Service untuk mengambil semua data pekerjaan alumni
+// GetAllPekerjaanAlumniService - Service untuk mengambil semua data pekerjaan alumni dengan pagination, sorting, dan search
 func GetAllPekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
-	pekerjaan, err := repository.GetAllPekerjaanAlumni(db)
+	// Parse query parameters
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	sortBy := c.Query("sortBy", "id")
+	order := c.Query("order", "asc")
+	search := c.Query("search", "")
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Validasi input
+	sortByWhitelist := map[string]bool{
+		"id": true, "alumni_id": true, "nama_perusahaan": true, "posisi_jabatan": true, 
+		"bidang_industri": true, "lokasi_kerja": true, "tanggal_mulai_kerja": true, 
+		"status_pekerjaan": true, "created_at": true,
+	}
+	if !sortByWhitelist[sortBy] {
+		sortBy = "id"
+	}
+
+	if strings.ToLower(order) != "desc" {
+		order = "asc"
+	}
+
+	// Ambil data dari repository dengan pagination
+	pekerjaan, err := repository.GetPekerjaanAlumniWithPagination(db, search, sortBy, order, limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Gagal mengambil data pekerjaan: " + err.Error(),
@@ -19,10 +45,34 @@ func GetAllPekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
+	// Hitung total data
+	total, err := repository.CountPekerjaanAlumni(db, search)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal menghitung total data pekerjaan: " + err.Error(),
+			"success": false,
+		})
+	}
+
+	// Buat response dengan pagination
+	response := model.PekerjaanAlumniResponse{
+		Data: pekerjaan,
+		Meta: model.MetaInfo{
+			Page:   page,
+			Limit:  limit,
+			Total:  total,
+			Pages:  (total + limit - 1) / limit,
+			SortBy: sortBy,
+			Order:  order,
+			Search: search,
+		},
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Berhasil mengambil semua data pekerjaan",
+		"message": "Berhasil mengambil data pekerjaan",
 		"success": true,
-		"data":    pekerjaan,
+		"data":    response.Data,
+		"meta":    response.Meta,
 	})
 }
 

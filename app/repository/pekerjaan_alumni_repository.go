@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"go-fiber/app/model"
 	"time"
 )
@@ -156,4 +157,66 @@ func DeletePekerjaanAlumni(db *sql.DB, id int) error {
 	query := `DELETE FROM pekerjaan_alumni WHERE id = $1`
 	_, err := db.Exec(query, id)
 	return err
+}
+
+// GetPekerjaanAlumniWithPagination - Ambil data pekerjaan alumni dengan pagination, sorting, dan search
+func GetPekerjaanAlumniWithPagination(db *sql.DB, search, sortBy, order string, limit, offset int) ([]model.PekerjaanAlumni, error) {
+	query := fmt.Sprintf(`
+		SELECT pa.id, pa.alumni_id, pa.nama_perusahaan, pa.posisi_jabatan, pa.bidang_industri, 
+		       pa.lokasi_kerja, pa.gaji_range, pa.tanggal_mulai_kerja, pa.tanggal_selesai_kerja, 
+		       pa.status_pekerjaan, pa.deskripsi_pekerjaan, pa.created_at, pa.updated_at
+		FROM pekerjaan_alumni pa
+		LEFT JOIN alumni a ON pa.alumni_id = a.id
+		WHERE pa.nama_perusahaan ILIKE $1 OR pa.posisi_jabatan ILIKE $1 OR pa.bidang_industri ILIKE $1 
+		      OR pa.lokasi_kerja ILIKE $1 OR a.nama ILIKE $1
+		ORDER BY pa.%s %s
+		LIMIT $2 OFFSET $3
+	`, sortBy, order)
+
+	rows, err := db.Query(query, "%"+search+"%", limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pekerjaanList []model.PekerjaanAlumni
+	for rows.Next() {
+		var p model.PekerjaanAlumni
+		var tanggalMulai, tanggalSelesai sql.NullTime
+		
+		err := rows.Scan(&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri, 
+			&p.LokasiKerja, &p.GajiRange, &tanggalMulai, &tanggalSelesai, 
+			&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Convert sql.NullTime to CustomDate
+		if tanggalMulai.Valid {
+			p.TanggalMulaiKerja = model.CustomDate{Time: tanggalMulai.Time}
+		}
+		if tanggalSelesai.Valid {
+			p.TanggalSelesaiKerja = &model.CustomDate{Time: tanggalSelesai.Time}
+		}
+		
+		pekerjaanList = append(pekerjaanList, p)
+	}
+	return pekerjaanList, nil
+}
+
+// CountPekerjaanAlumni - Hitung total data pekerjaan alumni untuk pagination
+func CountPekerjaanAlumni(db *sql.DB, search string) (int, error) {
+	var total int
+	countQuery := `
+		SELECT COUNT(*)
+		FROM pekerjaan_alumni pa
+		LEFT JOIN alumni a ON pa.alumni_id = a.id
+		WHERE pa.nama_perusahaan ILIKE $1 OR pa.posisi_jabatan ILIKE $1 OR pa.bidang_industri ILIKE $1 
+		      OR pa.lokasi_kerja ILIKE $1 OR a.nama ILIKE $1
+	`
+	err := db.QueryRow(countQuery, "%"+search+"%").Scan(&total)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, err
+	}
+	return total, nil
 }
