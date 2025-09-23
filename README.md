@@ -7,25 +7,53 @@ Sistem manajemen data alumni dan riwayat pekerjaan yang dibangun dengan Go Fiber
 Sebelum menjalankan aplikasi, Anda perlu menyiapkan database PostgreSQL terlebih dahulu.
 
 1. Buat database baru dengan nama `alumni_db`
-
+2. Jalankan script SQL untuk membuat tabel dan data sample:
+   ```sql
+   -- Jalankan file database/setup_complete.sql di PostgreSQL
+   ```
 
 ## Konfigurasi Environment
 
-Buat file `.env` di root directory seperti env_example:
+Buat file `.env` di root directory dengan konfigurasi berikut:
 
+```env
+# Database Configuration
+DB_DSN=postgres://username:password@localhost:5432/alumni_db?sslmode=disable
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
+
+# Application Configuration
+APP_PORT=3000
+```
 
 Sesuaikan username, password, dan host database dengan konfigurasi PostgreSQL Anda.
 
 ## Cara Menjalankan Aplikasi
 
 ```bash
-
+# Install dependencies
 go mod tidy
 
+# Jalankan aplikasi
 go run main.go
 ```
 
 Server akan berjalan di `http://localhost:3000` (atau port yang dikonfigurasi di .env).
+
+## Data Sample
+
+Aplikasi sudah dilengkapi dengan data sample untuk testing:
+
+**Users:**
+- Admin: `email: andinoferdiansah@gmail.com`, `password: 123456`
+- User: `email: sahrul@gmail.com`, `password: 123456`
+
+**Alumni Sample Data:**
+- Andino Ferdiansah (Teknik Informatika, 2023) - Admin role (role_id: 1)
+- Sahrul Alaudin (Sistem Informasi, 2019) - User role (role_id: 2)
+- Ahmad Rahman (Teknik Komputer, 2020) - User role (role_id: 2)
+- Siti Nurhaliza (Manajemen Informatika, 2017) - User role (role_id: 2)
 
 ## Dokumentasi API
 
@@ -46,7 +74,7 @@ API menggunakan JWT (JSON Web Token) untuk autentikasi dengan role-based access 
 **Request Body:**
 ```json
 {
-    "username": "admin",
+    "email": "andinoferdiansah@gmail.com",
     "password": "123456"
 }
 ```
@@ -57,12 +85,20 @@ API menggunakan JWT (JSON Web Token) untuk autentikasi dengan role-based access 
     "success": true,
     "message": "Login berhasil",
     "data": {
-        "user": {
+        "alumni": {
             "id": 1,
-            "username": "admin",
-            "email": "admin@gmail.com",
-            "role": "admin",
-            "created_at": "2023-01-01T00:00:00Z"
+            "nim": "123456789",
+            "nama": "Andino Ferdiansah",
+            "email": "andinoferdiansah@gmail.com",
+            "role_id": 1,
+            "role": {
+                "id": 1,
+                "nama": "admin"
+            }
+        },
+        "role": {
+            "id": 1,
+            "nama": "admin"
         },
         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     }
@@ -82,33 +118,43 @@ Content-Type: application/json
 | Endpoint | Admin | User | Keterangan |
 |----------|-------|------|------------|
 | `POST /login` | ✅ | ✅ | Public endpoint |
-| `GET /profile` | ✅ | ✅ | Profile user yang login |
-| `GET /alumni` | ✅ | ✅ | Lihat semua alumni |
+| `GET /profile` | ✅ | ✅ | Profile alumni yang login |
+| `GET /roles` | ✅ | ❌ | Lihat semua roles |
+| `GET /roles/{id}` | ✅ | ❌ | Lihat role by ID |
+| `GET /alumni` | ✅ | ✅ | Lihat semua alumni (dengan pagination) |
 | `GET /alumni/{id}` | ✅ | ✅ | Lihat alumni by ID |
 | `POST /alumni` | ✅ | ❌ | Tambah alumni |
 | `PUT /alumni/{id}` | ✅ | ❌ | Update alumni |
 | `DELETE /alumni/{id}` | ✅ | ❌ | Hapus alumni |
-| `GET /pekerjaan` | ✅ | ✅ | Lihat semua pekerjaan |
+| `GET /pekerjaan` | ✅ | ✅ | Lihat semua pekerjaan (dengan pagination) |
 | `GET /pekerjaan/{id}` | ✅ | ✅ | Lihat pekerjaan by ID |
 | `GET /pekerjaan/alumni/{alumni_id}` | ✅ | ❌ | Lihat pekerjaan by alumni |
 | `POST /pekerjaan` | ✅ | ❌ | Tambah pekerjaan |
 | `PUT /pekerjaan/{id}` | ✅ | ❌ | Update pekerjaan |
-| `DELETE /pekerjaan/{id}` | ✅ | ❌ | Hapus pekerjaan |
+| `DELETE /pekerjaan/{id}` | ✅ | ❌ | Hapus pekerjaan (hard delete) |
+| `PUT /pekerjaan/soft-delete/{id}` | ✅ | ✅ | Soft delete pekerjaan (role-based) |
 
 ### Manajemen Data Alumni
 
 #### Mengambil Semua Alumni
 ```
-GET /go-fiber/alumni
+GET /go-fiber/alumni?page=1&limit=10&search=&sortBy=id&order=asc
 Authorization: Bearer YOUR_JWT_TOKEN_HERE
 ```
 
-Mengembalikan daftar lengkap semua alumni yang terdaftar dalam sistem. **Memerlukan autentikasi.**
+Mengembalikan daftar alumni dengan pagination, search, dan sorting. **Memerlukan autentikasi.**
+
+**Query Parameters:**
+- `page`: Halaman (default: 1)
+- `limit`: Jumlah data per halaman (default: 10)
+- `search`: Pencarian berdasarkan nama, email, NIM, atau jurusan
+- `sortBy`: Field untuk sorting (id, nama, jurusan, angkatan, tahun_lulus, email, created_at)
+- `order`: Urutan sorting (asc/desc, default: asc)
 
 **Response berhasil:**
 ```json
 {
-    "message": "Berhasil mengambil semua data alumni",
+    "message": "Berhasil mengambil data alumni",
     "success": true,
     "data": [
         {
@@ -119,12 +165,22 @@ Mengembalikan daftar lengkap semua alumni yang terdaftar dalam sistem. **Memerlu
             "angkatan": 2018,
             "tahun_lulus": 2022,
             "email": "john.doe@email.com",
+            "user_id": 2,
             "no_telepon": "081234567890",
             "alamat": "Jl. Contoh No. 123",
             "created_at": "2023-01-01T00:00:00Z",
             "updated_at": "2023-01-01T00:00:00Z"
         }
-    ]
+    ],
+    "meta": {
+        "page": 1,
+        "limit": 10,
+        "total": 2,
+        "pages": 1,
+        "sortBy": "id",
+        "order": "asc",
+        "search": ""
+    }
 }
 ```
 
@@ -182,11 +238,18 @@ Authorization: Bearer YOUR_JWT_TOKEN_HERE
 
 #### Mengambil Semua Data Pekerjaan
 ```
-GET /go-fiber/pekerjaan
+GET /go-fiber/pekerjaan?page=1&limit=10&search=&sortBy=id&order=asc
 Authorization: Bearer YOUR_JWT_TOKEN_HERE
 ```
 
-Mengembalikan daftar semua riwayat pekerjaan dari seluruh alumni. **Memerlukan autentikasi.**
+Mengembalikan daftar pekerjaan dengan pagination, search, dan sorting. **Memerlukan autentikasi.**
+
+**Query Parameters:**
+- `page`: Halaman (default: 1)
+- `limit`: Jumlah data per halaman (default: 10)
+- `search`: Pencarian berdasarkan nama perusahaan, posisi, bidang industri, lokasi, atau nama alumni
+- `sortBy`: Field untuk sorting (id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, tanggal_mulai_kerja, status_pekerjaan, created_at)
+- `order`: Urutan sorting (asc/desc, default: asc)
 
 #### Mengambil Data Pekerjaan Tertentu
 ```
@@ -242,13 +305,25 @@ Content-Type: application/json
 
 **Admin Only** - Hanya admin yang dapat memperbarui data pekerjaan. Menggunakan format request body yang sama dengan endpoint POST.
 
-#### Menghapus Data Pekerjaan
+#### Menghapus Data Pekerjaan (Hard Delete)
 ```
 DELETE /go-fiber/pekerjaan/{id}
 Authorization: Bearer YOUR_JWT_TOKEN_HERE
 ```
 
-**Admin Only** - Hanya admin yang dapat menghapus riwayat pekerjaan tertentu dari sistem.
+**Admin Only** - Hanya admin yang dapat menghapus riwayat pekerjaan tertentu dari sistem secara permanen.
+
+#### Soft Delete Data Pekerjaan
+```
+PUT /go-fiber/pekerjaan/soft-delete/{id}
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+```
+
+**Role-based Access:**
+- **Admin**: Dapat soft delete semua pekerjaan
+- **User**: Hanya dapat soft delete pekerjaan yang terkait dengan alumni mereka
+
+Soft delete akan menandai data sebagai terhapus tanpa menghapus dari database.
 
 ## Testing dan Pengujian
 
@@ -295,13 +370,13 @@ Content-Type: application/json
 #### 3. Testing Scenarios
 
 **Scenario 1: Login sebagai Admin**
-1. Login dengan username: `admin`, password: `123456`
+1. Login dengan email: `andinoferdiansah@gmail.com`, password: `123456`
 2. Copy token dari response
 3. Test semua endpoint dengan token admin
 4. Pastikan admin bisa akses semua endpoint
 
 **Scenario 2: Login sebagai User**
-1. Login dengan username: `user1`, password: `123456`
+1. Login dengan email: `sahrul@gmail.com`, password: `123456`
 2. Copy token dari response
 3. Test GET endpoints → harus berhasil
 4. Test POST/PUT/DELETE endpoints → harus mendapat 403 Forbidden
@@ -343,7 +418,7 @@ Untuk memudahkan testing, ikuti langkah-langkah berikut:
 ```bash
 curl -X POST http://localhost:3000/go-fiber/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "123456"}'
+  -d '{"email": "andinoferdiansah@gmail.com", "password": "123456"}'
 ```
 
 **Testing endpoint GET alumni (dengan token):**
@@ -385,58 +460,69 @@ Aplikasi ini menggunakan clean architecture pattern dengan pemisahan layer yang 
 ```
 go-fiber/
 ├── app/
-│   ├── model/           # Definisi struktur data (alumni, pekerjaan, auth)
+│   ├── model/           # Definisi struktur data (alumni, pekerjaan, roles, auth, response)
 │   ├── repository/      # Layer akses database (CRUD operations)
 │   └── service/         # Logic bisnis aplikasi dan authentication
 ├── config/              # Konfigurasi aplikasi dan database
+│   ├── app.go          # Fiber app configuration
+│   ├── env.go          # Environment variables loader
+│   └── logger.go       # Application logger setup
 ├── database/            # Koneksi database dan schema
 │   ├── connection.go    # Database connection
-│   ├── Alumni&Pekerjaan.sql    # Schema alumni dan pekerjaan + sample data
-│   ├── Auth.sql         # Schema authentication + sample users
-│   └── setup_complete.sql      # Setup lengkap semua tabel (recommended)
+│   └── setup_complete.sql      # Setup lengkap semua tabel + sample data
 ├── helper/              # Utility functions
 │   ├── jwt.go          # JWT token generation dan validation
 │   ├── password.go     # Password hashing dan verification
-│   └── util.go         # General utilities
+│   └── util.go         # General utilities (empty)
 ├── middleware/          # Custom middleware
 │   ├── auth.go         # Authentication dan authorization middleware
-│   └── logger.go       # Logging middleware
+│   └── logger.go       # Request logging middleware
 ├── route/               # Definisi routing endpoint dengan access control
+│   └── route.go        # Route registration
 ├── logs/                # Log files (auto-created)
 │   └── app.log         # Main application log file
 ├── main.go             # Entry point aplikasi
-├── .env                # Environment configuration
-├── .gitignore          # Git ignore configuration
-└── LOGGING_GUIDE.md    # Dokumentasi logging lengkap
+├── go.mod              # Go module dependencies
+├── go.sum              # Go module checksums
+└── README.md           # Dokumentasi proyek
 ```
 
 ### Penjelasan Layer
 
-- **Model**: Mendefinisikan struktur data alumni, pekerjaan, dan authentication (User, LoginRequest, JWTClaims)
-- **Repository**: Menangani operasi database (CRUD) untuk alumni, pekerjaan, dan users
-- **Service**: Berisi logic bisnis, validasi, dan authentication services
-- **Route**: Mendefinisikan endpoint dengan access control dan menghubungkan dengan service
-- **Config**: Konfigurasi aplikasi dan database connection
-- **Helper**: Utility functions untuk JWT, password hashing, dan general utilities
-- **Middleware**: Authentication, authorization, dan logging middleware
+- **Model**: Mendefinisikan struktur data alumni, pekerjaan, roles, authentication, dan response models dengan pagination metadata
+- **Repository**: Menangani operasi database (CRUD) untuk alumni, pekerjaan, dan roles dengan prepared statements
+- **Service**: Berisi logic bisnis, validasi input, dan authentication services dengan error handling
+- **Route**: Mendefinisikan endpoint dengan access control dan menghubungkan dengan service layer
+- **Config**: Konfigurasi aplikasi, database connection, dan logger setup
+- **Helper**: Utility functions untuk JWT token management, password hashing, dan general utilities
+- **Middleware**: Authentication, authorization, dan request logging middleware
 
 ### Fitur Keamanan
 
-- **JWT Authentication**: Token-based authentication dengan expiration 24 jam
-- **Password Hashing**: Menggunakan bcrypt untuk keamanan password
-- **Role-based Access Control**: Admin dan User dengan permission berbeda
-- **Input Validation**: Validasi input untuk semua endpoint
-- **Error Handling**: Response error yang konsisten dan informatif
+- **JWT Authentication**: Token-based authentication dengan expiration 24 jam dan secret validation
+- **Password Hashing**: Menggunakan bcrypt dengan default cost untuk keamanan password
+- **Role-based Access Control**: Admin dan User dengan permission berbeda pada setiap endpoint
+- **Alumni-based Authentication**: Login menggunakan email alumni dengan role management
+- **Input Validation**: Validasi input untuk semua endpoint dengan error messages yang informatif
+- **SQL Injection Protection**: Menggunakan prepared statements untuk semua database queries
+- **Error Handling**: Response error yang konsisten dan informatif dengan HTTP status codes yang sesuai
 
 ### Fitur Logging
 
-- **Comprehensive Logging**: Semua request, response, dan authentication dicatat
+- **Comprehensive Logging**: Semua request, response, dan authentication dicatat dengan detail
 - **File & Console Output**: Log ditulis ke `logs/app.log` dan console secara bersamaan
 - **Auto-Creation**: Folder dan file log dibuat otomatis saat aplikasi dijalankan
-- **Request Tracking**: Method, path, status code, duration, IP, dan user agent
-- **Security Monitoring**: Login attempts (success/failure) dengan IP tracking
-- **Startup Logging**: Database connection, route registration, server startup
+- **Request Tracking**: Method, path, status code, duration, IP address, dan user agent
+- **Security Monitoring**: Login attempts (success/failure) dengan IP tracking untuk audit
+- **Startup Logging**: Database connection status, route registration, dan server startup
 
-Lihat [LOGGING_GUIDE.md](LOGGING_GUIDE.md) untuk dokumentasi lengkap logging.
+### Fitur Database
 
-Arsitektur ini memungkinkan code yang mudah dimaintain, testable, scalable, dan aman.
+- **PostgreSQL**: Database relational dengan foreign key constraints
+- **Role Management**: Sistem role terpisah dengan tabel roles untuk fleksibilitas
+- **Soft Delete**: Implementasi soft delete untuk pekerjaan alumni dengan timestamp
+- **Pagination**: Support pagination dengan search dan sorting untuk performa yang baik
+- **Indexing**: Database indexes pada field yang sering diquery (email, NIM, alumni_id, role_id)
+- **Sample Data**: Data sample untuk testing dan development
+
+Arsitektur ini memungkinkan code yang mudah dimaintain, testable, scalable, dan aman dengan pemisahan concern yang jelas dan implementasi best practices untuk Go web development.

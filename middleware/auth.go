@@ -7,10 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// AuthRequired middleware memverifikasi JWT token dan menyimpan user info di context
 func AuthRequired() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Ambil token dari header Authorization
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -20,7 +18,6 @@ func AuthRequired() fiber.Handler {
 			})
 		}
 
-		// Extract token dari "Bearer TOKEN"
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || strings.ToLower(tokenParts[0]) != "bearer" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -30,7 +27,6 @@ func AuthRequired() fiber.Handler {
 			})
 		}
 
-		// Validasi token
 		claims, err := helper.ValidateToken(tokenParts[1])
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -40,28 +36,27 @@ func AuthRequired() fiber.Handler {
 			})
 		}
 
-		// Simpan informasi user di context untuk handler berikutnya
-		c.Locals("user_id", claims.UserID)
-		c.Locals("username", claims.Username)
-		c.Locals("role", claims.Role)
+		c.Locals("alumni_id", claims.AlumniID)
+		c.Locals("email", claims.Email)
+		c.Locals("role_id", claims.RoleID)
+		c.Locals("role_name", claims.RoleName)
 
 		return c.Next()
 	}
 }
 
-// AdminOnly middleware memastikan user memiliki role admin
 func AdminOnly() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		role := c.Locals("role")
-		if role == nil {
+		roleName := c.Locals("role_name")
+		if roleName == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
 				"message": "Token akses diperlukan",
-				"error":   "User information not found in context",
+				"error":   "Role information not found in context",
 			})
 		}
 
-		userRole, ok := role.(string)
+		userRole, ok := roleName.(string)
 		if !ok || userRole != "admin" {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
@@ -74,19 +69,18 @@ func AdminOnly() fiber.Handler {
 	}
 }
 
-// UserOrAdmin middleware memungkinkan akses untuk user biasa atau admin
 func UserOrAdmin() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		role := c.Locals("role")
-		if role == nil {
+		roleName := c.Locals("role_name")
+		if roleName == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
 				"message": "Token akses diperlukan",
-				"error":   "User information not found in context",
+				"error":   "Role information not found in context",
 			})
 		}
 
-		userRole, ok := role.(string)
+		userRole, ok := roleName.(string)
 		if !ok || (userRole != "admin" && userRole != "user") {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,

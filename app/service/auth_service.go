@@ -10,11 +10,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// LoginService handles user login authentication
 func LoginService(c *fiber.Ctx, db *sql.DB) error {
 	var loginReq model.LoginRequest
 	
-	// Parse request body
 	if err := c.BodyParser(&loginReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -23,42 +21,37 @@ func LoginService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Validate input
-	if loginReq.Username == "" || loginReq.Password == "" {
+	if loginReq.Email == "" || loginReq.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"message": "Username dan password harus diisi",
+			"message": "Email dan password harus diisi",
 		})
 	}
 
-	// Get user from database
-	user, passwordHash, err := repository.GetUserByUsername(db, loginReq.Username)
+	alumni, err := repository.GetAlumniByEmail(db, loginReq.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			log.Printf("[AUTH] Failed login attempt for email: %s from IP: %s", loginReq.Email, c.IP())
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
-				"message": "Username atau password salah",
+				"message": "Email atau password salah",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Error database: " + err.Error(),
+			"message": "Gagal mengambil data alumni: " + err.Error(),
 		})
 	}
 
-	// Verify password
-	if !helper.CheckPassword(loginReq.Password, passwordHash) {
-		// Log failed login attempt
-		log.Printf("[AUTH] Failed login attempt for username: %s from IP: %s", loginReq.Username, c.IP())
-		
+	if !helper.CheckPassword(loginReq.Password, alumni.PasswordHash) {
+		log.Printf("[AUTH] Failed login attempt for email: %s from IP: %s", loginReq.Email, c.IP())
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
-			"message": "Username atau password salah",
+			"message": "Email atau password salah",
 		})
 	}
 
-	// Generate JWT token
-	token, err := helper.GenerateToken(*user)
+	token, err := helper.GenerateToken(*alumni)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -67,13 +60,12 @@ func LoginService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Log successful login
-	log.Printf("[AUTH] Successful login for user: %s (role: %s) from IP: %s", user.Username, user.Role, c.IP())
+	log.Printf("[AUTH] Successful login for alumni: %s (role: %s) from IP: %s", alumni.Email, alumni.Role.Nama, c.IP())
 	
-	// Create response
 	loginResponse := model.LoginResponse{
-		User:  *user,
-		Token: token,
+		Alumni: *alumni,
+		Role:   *alumni.Role,
+		Token:  token,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -83,24 +75,21 @@ func LoginService(c *fiber.Ctx, db *sql.DB) error {
 	})
 }
 
-// GetProfileService returns current user profile
 func GetProfileService(c *fiber.Ctx, db *sql.DB) error {
-	// Get user info from middleware context
-	userID, ok := c.Locals("user_id").(int)
+	alumniID, ok := c.Locals("alumni_id").(int)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
-			"message": "User information tidak valid",
+			"message": "Alumni information tidak valid",
 		})
 	}
 
-	// Get full user data from database
-	user, err := repository.GetUserByID(db, userID)
+	alumni, err := repository.GetAlumniByID(db, alumniID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"success": false,
-				"message": "User tidak ditemukan",
+				"message": "Alumni tidak ditemukan",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -109,12 +98,13 @@ func GetProfileService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Create profile response
 	profile := model.ProfileResponse{
-		UserID:   user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-		Role:     user.Role,
+		AlumniID: alumni.ID,
+		NIM:      alumni.NIM,
+		Nama:     alumni.Nama,
+		Email:    alumni.Email,
+		RoleID:   alumni.RoleID,
+		RoleName: alumni.Role.Nama,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

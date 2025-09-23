@@ -10,19 +10,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// GetAllAlumniService - Service untuk mengambil semua data alumni dengan pagination, sorting, dan search
 func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
-	// Parse query parameters
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 	sortBy := c.Query("sortBy", "id")
 	order := c.Query("order", "asc")
 	search := c.Query("search", "")
 
-	// Calculate offset
 	offset := (page - 1) * limit
 
-	// Validasi input
 	sortByWhitelist := map[string]bool{
 		"id": true, "nim": true, "nama": true, "jurusan": true, 
 		"angkatan": true, "tahun_lulus": true, "email": true, "created_at": true,
@@ -35,7 +31,6 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		order = "asc"
 	}
 
-	// Ambil data dari repository dengan pagination
 	alumni, err := repository.GetAlumniWithPagination(db, search, sortBy, order, limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -44,7 +39,6 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Hitung total data
 	total, err := repository.CountAlumni(db, search)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -53,7 +47,6 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Buat response dengan pagination
 	response := model.AlumniResponse{
 		Data: alumni,
 		Meta: model.MetaInfo{
@@ -75,7 +68,6 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	})
 }
 
-// GetAlumniByIDService - Service untuk mengambil data alumni berdasarkan ID
 func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
 	idStr := c.Params("id")
 	id, err := strconv.Atoi(idStr)
@@ -107,7 +99,6 @@ func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
 	})
 }
 
-// CreateAlumniService - Service untuk menambah alumni baru
 func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	var alumni model.Alumni
 	if err := c.BodyParser(&alumni); err != nil {
@@ -117,7 +108,6 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Validasi field wajib
 	if alumni.NIM == "" || alumni.Nama == "" || alumni.Jurusan == "" || alumni.Email == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Field NIM, Nama, Jurusan, dan Email wajib diisi",
@@ -139,7 +129,6 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	})
 }
 
-// UpdateAlumniService - Service untuk mengupdate data alumni
 func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	idStr := c.Params("id")
 	id, err := strconv.Atoi(idStr)
@@ -158,7 +147,6 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Validasi field wajib
 	if alumni.NIM == "" || alumni.Nama == "" || alumni.Jurusan == "" || alumni.Email == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Field NIM, Nama, Jurusan, dan Email wajib diisi",
@@ -166,7 +154,6 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Cek apakah alumni ada
 	_, err = repository.GetAlumniByID(db, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -196,7 +183,6 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	})
 }
 
-// DeleteAlumniService - Service untuk menghapus data alumni
 func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	idStr := c.Params("id")
 	id, err := strconv.Atoi(idStr)
@@ -207,7 +193,6 @@ func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Cek apakah alumni ada
 	_, err = repository.GetAlumniByID(db, id)
 	if err != nil {
 		if err == sql.ErrNoRows {

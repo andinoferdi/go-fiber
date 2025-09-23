@@ -9,14 +9,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// getJWTSecret returns JWT secret key from environment - REQUIRED!
 func getJWTSecret() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		log.Fatal("SECURITY ERROR: JWT_SECRET environment variable is required but not set! Please add JWT_SECRET to your .env file")
 	}
 	
-	// Validate minimum length for security
 	if len(secret) < 32 {
 		log.Fatal("SECURITY ERROR: JWT_SECRET must be at least 32 characters long for security")
 	}
@@ -24,18 +22,18 @@ func getJWTSecret() []byte {
 	return []byte(secret)
 }
 
-// GenerateToken creates a new JWT token for the given user
-func GenerateToken(user model.User) (string, error) {
+func GenerateToken(alumni model.Alumni) (string, error) {
 	claims := model.JWTClaims{
-		UserID:   user.ID,
-		Username: user.Username,
-		Role:     user.Role,
+		AlumniID: alumni.ID,
+		Email:    alumni.Email,
+		RoleID:   alumni.RoleID,
+		RoleName: alumni.Role.Nama,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			Issuer:    "alumni-api",
-			Subject:   user.Username,
+			Subject:   alumni.Email,
 		},
 	}
 
@@ -43,11 +41,9 @@ func GenerateToken(user model.User) (string, error) {
 	return token.SignedString(getJWTSecret())
 }
 
-// ValidateToken validates and parses JWT token, returns claims if valid
 func ValidateToken(tokenString string) (*model.JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &model.JWTClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-			// Ensure the signing method is HMAC
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
