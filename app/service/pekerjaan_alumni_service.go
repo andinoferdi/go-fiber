@@ -355,15 +355,15 @@ func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	if userRole == "admin" {
+	switch userRole {
+	case "admin":
 		if err := repository.SoftDeletePekerjaanAlumni(db, id); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Gagal menghapus pekerjaan: " + err.Error(),
 				"success": false,
 			})
 		}
-	} else if userRole == "user" {
-		// User hanya bisa menghapus pekerjaan yang terkait dengan alumni mereka
+	case "user":
 		if pekerjaan.AlumniID != userID {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"message": "Anda hanya bisa menghapus pekerjaan yang berelasi dengan akun Anda",
@@ -377,7 +377,7 @@ func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 				"success": false,
 			})
 		}
-	} else {
+	default:
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Role tidak valid",
 			"success": false,
