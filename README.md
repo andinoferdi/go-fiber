@@ -24,7 +24,7 @@ Sistem manajemen alumni dengan API menggunakan Go Fiber dan PostgreSQL. Sistem i
 
 ### 1. Clone Repository
 ```bash
-git clone <repository-url>
+git clone <[repository-url](https://github.com/andinoferdi/go-fiber)>
 cd go-fiber
 ```
 
