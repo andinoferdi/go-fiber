@@ -2,15 +2,18 @@ package config
 
 import (
 	"database/sql"
-	"go-fiber/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func NewApp(db *sql.DB) *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName: "Alumni Management API",
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return c.Status(500).JSON(fiber.Map{
+				"success": false,
+				"message": "Internal server error: " + err.Error(),
+			})
+		},
 	})
-	app.Use(middleware.LoggerMiddleware)
 	return app
 }

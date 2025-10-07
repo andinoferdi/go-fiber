@@ -1,8 +1,7 @@
 package middleware
 
 import (
-	"go-fiber/helper"
-	"strings"
+	"go-fiber/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,33 +12,30 @@ func AuthRequired() fiber.Handler {
 		if authHeader == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
-				"message": "Token akses diperlukan",
-				"error":   "Authorization header missing",
+				"message": "Token akses diperlukan. Tambahkan header 'Authorization: Bearer YOUR_TOKEN'.",
 			})
 		}
 
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) != 2 || strings.ToLower(tokenParts[0]) != "bearer" {
+		tokenString := utils.ExtractTokenFromHeader(authHeader)
+		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
-				"message": "Format token tidak valid",
-				"error":   "Invalid authorization header format",
+				"message": "Format token tidak valid. Gunakan format 'Bearer YOUR_TOKEN'.",
 			})
 		}
 
-		claims, err := helper.ValidateToken(tokenParts[1])
+		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
-				"message": "Token tidak valid atau expired",
-				"error":   err.Error(),
+				"message": "Token tidak valid atau sudah expired. Silakan login ulang untuk mendapatkan token baru.",
 			})
 		}
 
 		c.Locals("alumni_id", claims.AlumniID)
 		c.Locals("email", claims.Email)
 		c.Locals("role_id", claims.RoleID)
-		c.Locals("role_name", claims.RoleName)
+		c.Locals("role", claims.Role)
 
 		return c.Next()
 	}
@@ -47,48 +43,26 @@ func AuthRequired() fiber.Handler {
 
 func AdminOnly() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		roleName := c.Locals("role_name")
-		if roleName == nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"success": false,
-				"message": "Token akses diperlukan",
-				"error":   "Role information not found in context",
-			})
-		}
-
-		userRole, ok := roleName.(string)
-		if !ok || userRole != "admin" {
+		role := c.Locals("role").(string)
+		if role != "admin" {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
-				"message": "Akses ditolak. Hanya admin yang diizinkan",
-				"error":   "Insufficient privileges",
+				"message": "Akses ditolak. Hanya admin yang dapat mengakses endpoint ini.",
 			})
 		}
-
 		return c.Next()
 	}
 }
 
 func UserOrAdmin() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		roleName := c.Locals("role_name")
-		if roleName == nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"success": false,
-				"message": "Token akses diperlukan",
-				"error":   "Role information not found in context",
-			})
-		}
-
-		userRole, ok := roleName.(string)
-		if !ok || (userRole != "admin" && userRole != "user") {
+		role := c.Locals("role").(string)
+		if role != "admin" && role != "user" {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
-				"message": "Akses ditolak. Role tidak valid",
-				"error":   "Invalid role",
+				"message": "Akses ditolak. Role tidak valid. Gunakan role 'admin' atau 'user'.",
 			})
 		}
-
 		return c.Next()
 	}
 }

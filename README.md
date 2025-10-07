@@ -1,528 +1,295 @@
-# Alumni Management API
+# Alumni Management System API
 
-Sistem manajemen data alumni dan riwayat pekerjaan yang dibangun dengan Go Fiber menggunakan clean architecture pattern. API ini menyediakan operasi CRUD lengkap untuk mengelola informasi alumni dan data pekerjaan mereka dengan sistem autentikasi JWT dan role-based access control.
+Sistem manajemen alumni dengan API menggunakan Go Fiber dan PostgreSQL. Sistem ini memungkinkan pengelolaan data alumni dan pekerjaan alumni dengan fitur autentikasi berbasis role.
 
-## Persiapan Database
+## Fitur Utama
 
-Sebelum menjalankan aplikasi, Anda perlu menyiapkan database PostgreSQL terlebih dahulu.
+- **Autentikasi JWT** - Login dengan email dan password
+- **Role-Based Access Control** - Admin dan User memiliki akses berbeda
+- **CRUD Alumni** - Kelola data alumni lengkap
+- **CRUD Pekerjaan Alumni** - Kelola riwayat pekerjaan alumni
+- **Soft Delete** - Tandai data sebagai terhapus tanpa menghilangkan dari database
+- **Pagination & Search** - Tampilkan data dengan pagination dan pencarian
+- **Sorting** - Urutkan data berdasarkan kolom tertentu
 
-1. Buat database baru dengan nama `alumni_db`
-2. Jalankan script SQL untuk membuat tabel dan data sample:
-   ```sql
-   -- Jalankan file database/setup_complete.sql di PostgreSQL
-   ```
+## Teknologi yang Digunakan
 
-## Konfigurasi Environment
+- **Backend**: Go dengan framework Fiber
+- **Database**: PostgreSQL
+- **Authentication**: JWT (JSON Web Token)
+- **Password Hashing**: bcrypt
+- **Environment**: godotenv
 
-Buat file `.env` di root directory dengan konfigurasi berikut:
+## Instalasi dan Setup
 
-```env
-# Database Configuration
-DB_DSN=postgres://username:password@localhost:5432/alumni_db?sslmode=disable
-
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
-
-# Application Configuration
-APP_PORT=3000
+### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd go-fiber
 ```
 
-Sesuaikan username, password, dan host database dengan konfigurasi PostgreSQL Anda.
-
-## Cara Menjalankan Aplikasi
-
+### 2. Install Dependencies
 ```bash
-# Install dependencies
-go mod tidy
+go mod download
+```
 
-# Jalankan aplikasi
+### 3. Setup Database
+- Install PostgreSQL
+- Buat database baru
+- Jalankan script setup:
+```bash
+psql -U postgres -f database/setup.sql
+```
+
+### 4. Setup Environment
+Buat file `.env` di root project:
+```env
+DB_DSN=postgres://username:password@localhost:5432/alumni_db?sslmode=disable
+APP_PORT=3000
+JWT_SECRET=your-secret-key-here
+```
+
+### 5. Jalankan Aplikasi
+```bash
 go run main.go
 ```
 
-Server akan berjalan di `http://localhost:3000` (atau port yang dikonfigurasi di .env).
+Server akan berjalan di `http://localhost:3000`
+
+## Struktur Database
+
+### Tabel Roles
+- `id` - Primary key
+- `nama` - Nama role (admin, user)
+
+### Tabel Alumni
+- `id` - Primary key
+- `nim` - Nomor Induk Mahasiswa
+- `nama` - Nama lengkap
+- `jurusan` - Jurusan kuliah
+- `angkatan` - Tahun masuk
+- `tahun_lulus` - Tahun lulus
+- `email` - Email (unique)
+- `password_hash` - Password terenkripsi
+- `no_telepon` - Nomor telepon
+- `alamat` - Alamat lengkap
+- `role_id` - Foreign key ke tabel roles
+
+### Tabel Pekerjaan Alumni
+- `id` - Primary key
+- `alumni_id` - Foreign key ke tabel alumni
+- `nama_perusahaan` - Nama perusahaan
+- `posisi_jabatan` - Posisi/jabatan
+- `bidang_industri` - Bidang industri
+- `lokasi_kerja` - Lokasi kerja
+- `gaji_range` - Range gaji
+- `tanggal_mulai_kerja` - Tanggal mulai kerja
+- `tanggal_selesai_kerja` - Tanggal selesai kerja
+- `status_pekerjaan` - Status (aktif, selesai, resigned)
+- `deskripsi_pekerjaan` - Deskripsi pekerjaan
+- `is_delete` - Timestamp soft delete
+
+## API Endpoints
+
+### Autentikasi
+- `POST /go-fiber/login` - Login dan dapatkan token
+- `GET /go-fiber/profile` - Ambil data profile dari token
+
+### Alumni (Memerlukan Token)
+- `GET /go-fiber/alumni` - Ambil semua alumni dengan pagination
+- `GET /go-fiber/alumni/:id` - Ambil alumni berdasarkan ID
+- `POST /go-fiber/alumni` - Buat alumni baru (Admin only)
+- `PUT /go-fiber/alumni/:id` - Update alumni (Admin only)
+- `DELETE /go-fiber/alumni/:id` - Hapus alumni (Admin only)
+
+### Pekerjaan Alumni (Memerlukan Token)
+- `GET /go-fiber/pekerjaan` - Ambil semua pekerjaan dengan pagination
+- `GET /go-fiber/pekerjaan/:id` - Ambil pekerjaan berdasarkan ID
+- `GET /go-fiber/pekerjaan/alumni/:alumni_id` - Ambil pekerjaan berdasarkan alumni ID
+- `POST /go-fiber/pekerjaan` - Buat pekerjaan baru (Admin only)
+- `PUT /go-fiber/pekerjaan/:id` - Update pekerjaan (Admin only)
+- `PUT /go-fiber/pekerjaan/soft-delete/:id` - Soft delete pekerjaan (User/Admin)
+- `DELETE /go-fiber/pekerjaan/:id` - Hard delete pekerjaan (Admin only)
+
+### Roles (Memerlukan Token)
+- `GET /go-fiber/roles` - Ambil semua roles
+- `GET /go-fiber/roles/:id` - Ambil role berdasarkan ID
+- `POST /go-fiber/roles` - Buat role baru (Admin only)
+- `PUT /go-fiber/roles/:id` - Update role (Admin only)
+- `DELETE /go-fiber/roles/:id` - Hapus role (Admin only)
+
+## Parameter Query
+
+### Pagination
+- `page` - Halaman (default: 1)
+- `limit` - Data per halaman (default: 10, max: 100)
+
+### Sorting
+- `sortBy` - Kolom untuk sorting (id, nama, email, dll)
+- `order` - Urutan (asc/desc, default: asc)
+
+### Search
+- `search` - Kata kunci pencarian (case-insensitive)
+
+### Contoh URL
+```
+GET /go-fiber/alumni?page=1&limit=5&sortBy=nama&order=desc&search=informatika
+```
+
+## Role dan Permission
+
+### Admin
+- Dapat mengakses semua endpoint
+- Dapat membuat, mengupdate, dan menghapus data
+- Dapat soft delete semua pekerjaan alumni
+
+### User
+- Dapat membaca data alumni dan pekerjaan
+- Dapat soft delete hanya pekerjaan alumni miliknya sendiri
+- Tidak dapat membuat, mengupdate, atau menghapus data
+
+## Format Request/Response
+
+### Login Request
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+### Login Response
+```json
+{
+  "success": true,
+  "message": "Login berhasil. Token JWT telah dibuat.",
+  "data": {
+    "alumni": {
+      "id": 1,
+      "nama": "John Doe",
+      "email": "john@example.com",
+      "role": {
+        "nama": "admin"
+      }
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+### Create Alumni Request
+```json
+{
+  "nim": "2021001",
+  "nama": "John Doe",
+  "jurusan": "Teknik Informatika",
+  "angkatan": 2021,
+  "tahun_lulus": 2025,
+  "email": "john@example.com",
+  "password": "password123",
+  "no_telepon": "081234567890",
+  "alamat": "Jl. Contoh No. 1",
+  "role_id": 2
+}
+```
+
+### Pagination Response
+```json
+{
+  "data": [...],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 50,
+    "pages": 5,
+    "sortBy": "nama",
+    "order": "asc",
+    "search": ""
+  }
+}
+```
+
+## Error Handling
+
+Semua error response memiliki format konsisten:
+```json
+{
+  "success": false,
+  "message": "Deskripsi error yang jelas"
+}
+```
+
+### Status Code
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request (validasi error)
+- `401` - Unauthorized (token tidak valid)
+- `403` - Forbidden (tidak ada permission)
+- `404` - Not Found (data tidak ditemukan)
+- `500` - Internal Server Error
+
+## Testing API
+
+### Menggunakan Postman
+1. Login untuk mendapatkan token
+2. Set header `Authorization: Bearer YOUR_TOKEN`
+3. Test endpoint sesuai kebutuhan
+
+### Menggunakan curl
+```bash
+# Login
+curl -X POST http://localhost:3000/go-fiber/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"123456"}'
+
+# Ambil data alumni
+curl -X GET http://localhost:3000/go-fiber/alumni \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
 
 ## Data Sample
 
-Aplikasi sudah dilengkapi dengan data sample untuk testing:
-
-**Users:**
-- Admin: `email: andinoferdiansah@gmail.com`, `password: 123456`
-- User: `email: sahrul@gmail.com`, `password: 123456`
-
-**Alumni Sample Data:**
-- Andino Ferdiansah (Teknik Informatika, 2023) - Admin role (role_id: 1)
-- Sahrul Alaudin (Sistem Informasi, 2019) - User role (role_id: 2)
-- Ahmad Rahman (Teknik Komputer, 2020) - User role (role_id: 2)
-- Siti Nurhaliza (Manajemen Informatika, 2017) - User role (role_id: 2)
-
-## Dokumentasi API
-
-API ini menyediakan endpoint RESTful untuk mengelola data alumni dan pekerjaan dengan sistem autentikasi JWT. Semua endpoint menggunakan format JSON untuk request dan response.
-
-### Sistem Autentikasi
-
-API menggunakan JWT (JSON Web Token) untuk autentikasi dengan role-based access control:
-
-- **Public Endpoints**: Login
-- **Protected Endpoints**: Memerlukan token JWT di header Authorization
-- **Role-based Access**: Admin dapat akses semua endpoint, User hanya dapat akses GET endpoints
-
-### Login
-
-**Endpoint:** `POST /go-fiber/login`
-
-**Request Body:**
-```json
-{
-    "email": "andinoferdiansah@gmail.com",
-    "password": "123456"
-}
-```
-
-**Response:**
-```json
-{
-    "success": true,
-    "message": "Login berhasil",
-    "data": {
-        "alumni": {
-            "id": 1,
-            "nim": "123456789",
-            "nama": "Andino Ferdiansah",
-            "email": "andinoferdiansah@gmail.com",
-            "role_id": 1,
-            "role": {
-                "id": 1,
-                "nama": "admin"
-            }
-        },
-        "role": {
-            "id": 1,
-            "nama": "admin"
-        },
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    }
-}
-```
-
-### Menggunakan Token
-
-Untuk semua endpoint protected, tambahkan header:
-```
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-Content-Type: application/json
-```
-
-### Access Control
-
-| Endpoint | Admin | User | Keterangan |
-|----------|-------|------|------------|
-| `POST /login` | ✅ | ✅ | Public endpoint |
-| `GET /profile` | ✅ | ✅ | Profile alumni yang login |
-| `GET /roles` | ✅ | ❌ | Lihat semua roles |
-| `GET /roles/{id}` | ✅ | ❌ | Lihat role by ID |
-| `GET /alumni` | ✅ | ✅ | Lihat semua alumni (dengan pagination) |
-| `GET /alumni/{id}` | ✅ | ✅ | Lihat alumni by ID |
-| `POST /alumni` | ✅ | ❌ | Tambah alumni |
-| `PUT /alumni/{id}` | ✅ | ❌ | Update alumni |
-| `DELETE /alumni/{id}` | ✅ | ❌ | Hapus alumni |
-| `GET /pekerjaan` | ✅ | ✅ | Lihat semua pekerjaan (dengan pagination) |
-| `GET /pekerjaan/{id}` | ✅ | ✅ | Lihat pekerjaan by ID |
-| `GET /pekerjaan/alumni/{alumni_id}` | ✅ | ❌ | Lihat pekerjaan by alumni |
-| `POST /pekerjaan` | ✅ | ❌ | Tambah pekerjaan |
-| `PUT /pekerjaan/{id}` | ✅ | ❌ | Update pekerjaan |
-| `DELETE /pekerjaan/{id}` | ✅ | ❌ | Hapus pekerjaan (hard delete) |
-| `PUT /pekerjaan/soft-delete/{id}` | ✅ | ✅ | Soft delete pekerjaan (role-based) |
-
-### Manajemen Data Alumni
-
-#### Mengambil Semua Alumni
-```
-GET /go-fiber/alumni?page=1&limit=10&search=&sortBy=id&order=asc
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-Mengembalikan daftar alumni dengan pagination, search, dan sorting. **Memerlukan autentikasi.**
-
-**Query Parameters:**
-- `page`: Halaman (default: 1)
-- `limit`: Jumlah data per halaman (default: 10)
-- `search`: Pencarian berdasarkan nama, email, NIM, atau jurusan
-- `sortBy`: Field untuk sorting (id, nama, jurusan, angkatan, tahun_lulus, email, created_at)
-- `order`: Urutan sorting (asc/desc, default: asc)
-
-**Response berhasil:**
-```json
-{
-    "message": "Berhasil mengambil data alumni",
-    "success": true,
-    "data": [
-        {
-            "id": 1,
-            "nim": "123456789",
-            "nama": "John Doe",
-            "jurusan": "Teknik Informatika",
-            "angkatan": 2018,
-            "tahun_lulus": 2022,
-            "email": "john.doe@email.com",
-            "user_id": 2,
-            "no_telepon": "081234567890",
-            "alamat": "Jl. Contoh No. 123",
-            "created_at": "2023-01-01T00:00:00Z",
-            "updated_at": "2023-01-01T00:00:00Z"
-        }
-    ],
-    "meta": {
-        "page": 1,
-        "limit": 10,
-        "total": 2,
-        "pages": 1,
-        "sortBy": "id",
-        "order": "asc",
-        "search": ""
-    }
-}
-```
-
-#### Mengambil Data Alumni Tertentu
-```
-GET /go-fiber/alumni/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-Mengambil informasi detail alumni berdasarkan ID yang diberikan. **Memerlukan autentikasi.**
-
-#### Menambah Alumni Baru
-```
-POST /go-fiber/alumni
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-Content-Type: application/json
-```
-
-**Admin Only** - Hanya admin yang dapat menambah alumni baru.
-
-**Request body yang diperlukan:**
-```json
-{
-    "nim": "123456789",
-    "nama": "John Doe",
-    "jurusan": "Teknik Informatika",
-    "angkatan": 2018,
-    "tahun_lulus": 2022,
-    "email": "john.doe@email.com",
-    "no_telepon": "081234567890",
-    "alamat": "Jl. Contoh No. 123"
-}
-```
-
-Field `nim`, `nama`, `jurusan`, dan `email` wajib diisi. Field lainnya bersifat opsional.
-
-#### Memperbarui Data Alumni
-```
-PUT /go-fiber/alumni/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-Content-Type: application/json
-```
-
-**Admin Only** - Hanya admin yang dapat memperbarui data alumni. Menggunakan format request body yang sama dengan endpoint POST. Semua field akan diperbarui sesuai data yang dikirim.
-
-#### Menghapus Alumni
-```
-DELETE /go-fiber/alumni/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-**Admin Only** - Hanya admin yang dapat menghapus data alumni beserta seluruh riwayat pekerjaan yang terkait (cascade delete).
-
-### Manajemen Data Pekerjaan Alumni
-
-#### Mengambil Semua Data Pekerjaan
-```
-GET /go-fiber/pekerjaan?page=1&limit=10&search=&sortBy=id&order=asc
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-Mengembalikan daftar pekerjaan dengan pagination, search, dan sorting. **Memerlukan autentikasi.**
-
-**Query Parameters:**
-- `page`: Halaman (default: 1)
-- `limit`: Jumlah data per halaman (default: 10)
-- `search`: Pencarian berdasarkan nama perusahaan, posisi, bidang industri, lokasi, atau nama alumni
-- `sortBy`: Field untuk sorting (id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, tanggal_mulai_kerja, status_pekerjaan, created_at)
-- `order`: Urutan sorting (asc/desc, default: asc)
-
-#### Mengambil Data Pekerjaan Tertentu
-```
-GET /go-fiber/pekerjaan/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-Mengambil detail pekerjaan berdasarkan ID pekerjaan yang diberikan. **Memerlukan autentikasi.**
-
-#### Mengambil Pekerjaan Berdasarkan Alumni
-```
-GET /go-fiber/pekerjaan/alumni/{alumni_id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-**Admin Only** - Menampilkan semua riwayat pekerjaan dari alumni tertentu, diurutkan berdasarkan tanggal mulai kerja terbaru.
-
-#### Menambah Data Pekerjaan Baru
-```
-POST /go-fiber/pekerjaan
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-Content-Type: application/json
-```
-
-**Admin Only** - Hanya admin yang dapat menambah data pekerjaan baru.
-
-**Request body:**
-```json
-{
-    "alumni_id": 1,
-    "nama_perusahaan": "PT. Tech Indonesia",
-    "posisi_jabatan": "Software Engineer",
-    "bidang_industri": "Teknologi",
-    "lokasi_kerja": "Jakarta",
-    "gaji_range": "10-15 juta",
-    "tanggal_mulai_kerja": "2022-08-01",
-    "tanggal_selesai_kerja": null,
-    "status_pekerjaan": "aktif",
-    "deskripsi_pekerjaan": "Mengembangkan aplikasi web"
-}
-```
-
-Field wajib: `alumni_id`, `nama_perusahaan`, `posisi_jabatan`, `bidang_industri`, `lokasi_kerja`, dan `tanggal_mulai_kerja`.
-
-Status pekerjaan yang valid: `aktif`, `selesai`, atau `resigned`. Jika tidak diisi, default adalah `aktif`.
-
-#### Memperbarui Data Pekerjaan
-```
-PUT /go-fiber/pekerjaan/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-Content-Type: application/json
-```
-
-**Admin Only** - Hanya admin yang dapat memperbarui data pekerjaan. Menggunakan format request body yang sama dengan endpoint POST.
-
-#### Menghapus Data Pekerjaan (Hard Delete)
-```
-DELETE /go-fiber/pekerjaan/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-**Admin Only** - Hanya admin yang dapat menghapus riwayat pekerjaan tertentu dari sistem secara permanen.
-
-#### Soft Delete Data Pekerjaan
-```
-PUT /go-fiber/pekerjaan/soft-delete/{id}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
-
-**Role-based Access:**
-- **Admin**: Dapat soft delete semua pekerjaan
-- **User**: Hanya dapat soft delete pekerjaan yang terkait dengan alumni mereka
-
-Soft delete akan menandai data sebagai terhapus tanpa menghapus dari database.
-
-## Testing dan Pengujian
-
-### Langkah-langkah Testing dengan Authentication
-
-#### 1. Login untuk Mendapatkan Token
-
-**Request:**
-```
-POST http://localhost:3000/go-fiber/login
-Content-Type: application/json
-
-{
-    "username": "admin",
-    "password": "123456"
-}
-```
-
-**Response:**
-```json
-{
-    "success": true,
-    "message": "Login berhasil",
-    "data": {
-        "user": {
-            "id": 1,
-            "username": "admin",
-            "email": "admin@gmail.com",
-            "role": "admin"
-        },
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    }
-}
-```
-
-#### 2. Menggunakan Token di Header
-
-Untuk semua endpoint protected, tambahkan header:
-```
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-Content-Type: application/json
-```
-
-#### 3. Testing Scenarios
-
-**Scenario 1: Login sebagai Admin**
-1. Login dengan email: `andinoferdiansah@gmail.com`, password: `123456`
-2. Copy token dari response
-3. Test semua endpoint dengan token admin
-4. Pastikan admin bisa akses semua endpoint
-
-**Scenario 2: Login sebagai User**
-1. Login dengan email: `sahrul@gmail.com`, password: `123456`
-2. Copy token dari response
-3. Test GET endpoints → harus berhasil
-4. Test POST/PUT/DELETE endpoints → harus mendapat 403 Forbidden
-5. Test GET `/go-fiber/pekerjaan/alumni/{alumni_id}` → harus 403 Forbidden
-
-**Scenario 3: Uji Token Invalid**
-1. Gunakan token yang salah/expired
-2. Test endpoint protected → harus mendapat 401 Unauthorized
-
-**Scenario 4: Uji Tanpa Token**
-1. Test endpoint protected tanpa header Authorization
-2. Harus mendapat 401 Unauthorized
-
-### Menggunakan Postman
-
-Untuk memudahkan testing, ikuti langkah-langkah berikut:
-
-1. **Setup Environment Variable** di Postman:
-   - `base_url`: `http://localhost:3000`
-   - `token`: (akan diisi setelah login)
-
-2. **Login Request:**
-   - Method: `POST`
-   - URL: `{{base_url}}/go-fiber/login`
-   - Body: JSON dengan username dan password
-
-3. **Setup Authorization Header:**
-   - Di setiap request protected, tambahkan header:
-   - Key: `Authorization`
-   - Value: `Bearer {{token}}`
-
-4. **Test Endpoints:**
-   - Jalankan request sesuai kebutuhan testing
-   - Periksa response format dan status code
-
-### Testing Manual dengan cURL
-
-**Login untuk mendapatkan token:**
-```bash
-curl -X POST http://localhost:3000/go-fiber/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "andinoferdiansah@gmail.com", "password": "123456"}'
-```
-
-**Testing endpoint GET alumni (dengan token):**
-```bash
-curl -X GET http://localhost:3000/go-fiber/alumni \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json"
-```
-
-**Testing POST alumni baru (admin only):**
-```bash
-curl -X POST http://localhost:3000/go-fiber/alumni \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nim": "123456789",
-    "nama": "John Doe",
-    "jurusan": "Teknik Informatika",
-    "angkatan": 2018,
-    "tahun_lulus": 2022,
-    "email": "john.doe@email.com"
-  }'
-```
-
-### Expected HTTP Status Codes
-
-- `200 OK`: Request berhasil
-- `201 Created`: Resource berhasil dibuat
-- `400 Bad Request`: Input validation error
-- `401 Unauthorized`: Token missing/invalid/expired
-- `403 Forbidden`: Insufficient privileges (wrong role)
-- `404 Not Found`: Resource tidak ditemukan
-- `500 Internal Server Error`: Server error
-
-## Arsitektur dan Struktur Project
-
-Aplikasi ini menggunakan clean architecture pattern dengan pemisahan layer yang jelas:
-
-```
-go-fiber/
-├── app/
-│   ├── model/           # Definisi struktur data (alumni, pekerjaan, roles, auth, response)
-│   ├── repository/      # Layer akses database (CRUD operations)
-│   └── service/         # Logic bisnis aplikasi dan authentication
-├── config/              # Konfigurasi aplikasi dan database
-│   ├── app.go          # Fiber app configuration
-│   ├── env.go          # Environment variables loader
-│   └── logger.go       # Application logger setup
-├── database/            # Koneksi database dan schema
-│   ├── connection.go    # Database connection
-│   └── setup_complete.sql      # Setup lengkap semua tabel + sample data
-├── helper/              # Utility functions
-│   ├── jwt.go          # JWT token generation dan validation
-│   ├── password.go     # Password hashing dan verification
-│   └── util.go         # General utilities (empty)
-├── middleware/          # Custom middleware
-│   ├── auth.go         # Authentication dan authorization middleware
-│   └── logger.go       # Request logging middleware
-├── route/               # Definisi routing endpoint dengan access control
-│   └── route.go        # Route registration
-├── logs/                # Log files (auto-created)
-│   └── app.log         # Main application log file
-├── main.go             # Entry point aplikasi
-├── go.mod              # Go module dependencies
-├── go.sum              # Go module checksums
-└── README.md           # Dokumentasi proyek
-```
-
-### Penjelasan Layer
-
-- **Model**: Mendefinisikan struktur data alumni, pekerjaan, roles, authentication, dan response models dengan pagination metadata
-- **Repository**: Menangani operasi database (CRUD) untuk alumni, pekerjaan, dan roles dengan prepared statements
-- **Service**: Berisi logic bisnis, validasi input, dan authentication services dengan error handling
-- **Route**: Mendefinisikan endpoint dengan access control dan menghubungkan dengan service layer
-- **Config**: Konfigurasi aplikasi, database connection, dan logger setup
-- **Helper**: Utility functions untuk JWT token management, password hashing, dan general utilities
-- **Middleware**: Authentication, authorization, dan request logging middleware
-
-### Fitur Keamanan
-
-- **JWT Authentication**: Token-based authentication dengan expiration 24 jam dan secret validation
-- **Password Hashing**: Menggunakan bcrypt dengan default cost untuk keamanan password
-- **Role-based Access Control**: Admin dan User dengan permission berbeda pada setiap endpoint
-- **Alumni-based Authentication**: Login menggunakan email alumni dengan role management
-- **Input Validation**: Validasi input untuk semua endpoint dengan error messages yang informatif
-- **SQL Injection Protection**: Menggunakan prepared statements untuk semua database queries
-- **Error Handling**: Response error yang konsisten dan informatif dengan HTTP status codes yang sesuai
-
-### Fitur Logging
-
-- **Comprehensive Logging**: Semua request, response, dan authentication dicatat dengan detail
-- **File & Console Output**: Log ditulis ke `logs/app.log` dan console secara bersamaan
-- **Auto-Creation**: Folder dan file log dibuat otomatis saat aplikasi dijalankan
-- **Request Tracking**: Method, path, status code, duration, IP address, dan user agent
-- **Security Monitoring**: Login attempts (success/failure) dengan IP tracking untuk audit
-- **Startup Logging**: Database connection status, route registration, dan server startup
-
-### Fitur Database
-
-- **PostgreSQL**: Database relational dengan foreign key constraints
-- **Role Management**: Sistem role terpisah dengan tabel roles untuk fleksibilitas
-- **Soft Delete**: Implementasi soft delete untuk pekerjaan alumni dengan timestamp
-- **Pagination**: Support pagination dengan search dan sorting untuk performa yang baik
-- **Indexing**: Database indexes pada field yang sering diquery (email, NIM, alumni_id, role_id)
-- **Sample Data**: Data sample untuk testing dan development
-
-Arsitektur ini memungkinkan code yang mudah dimaintain, testable, scalable, dan aman dengan pemisahan concern yang jelas dan implementasi best practices untuk Go web development.
+Sistem sudah dilengkapi dengan data sample:
+- 5 alumni (1 admin, 4 user)
+- 5 pekerjaan alumni
+- 2 roles (admin, user)
+
+### Login Credentials
+- **Admin**: ahmad.fauzi@email.com / 123456
+- **User**: siti.nurhaliza@email.com / 123456
+
+## Troubleshooting
+
+### Database Connection Error
+- Pastikan PostgreSQL sudah running
+- Cek koneksi string di file .env
+- Pastikan database sudah dibuat
+
+### Token Error
+- Pastikan token tidak expired
+- Cek format header Authorization
+- Login ulang jika token invalid
+
+### Permission Error
+- Pastikan menggunakan role yang benar
+- Admin dapat akses semua endpoint
+- User hanya dapat akses terbatas
+
+### Soft Delete vs Hard Delete
+- **Soft Delete** (`PUT /soft-delete/:id`): Data ditandai sebagai terhapus dengan timestamp
+- **Hard Delete** (`DELETE /:id`): Data benar-benar dihapus dari database
+- Data yang di-soft delete tidak akan muncul di hasil query
+- **Admin**: Dapat melakukan soft delete dan hard delete semua pekerjaan alumni
+- **User**: Hanya dapat soft delete pekerjaan alumni miliknya sendiri
+
+## Kontribusi
+
+1. Fork repository
+2. Buat branch fitur baru
+3. Commit perubahan
+4. Push ke branch
+5. Buat Pull Request
+
+## Lisensi
+
+MIT License

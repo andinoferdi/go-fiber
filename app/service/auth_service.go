@@ -4,112 +4,78 @@ import (
 	"database/sql"
 	"go-fiber/app/model"
 	"go-fiber/app/repository"
-	"go-fiber/helper"
-	"log"
+	"go-fiber/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func LoginService(c *fiber.Ctx, db *sql.DB) error {
-	var loginReq model.LoginRequest
-	
-	if err := c.BodyParser(&loginReq); err != nil {
+	var req model.LoginRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"message": "Format data tidak valid",
-			"error":   err.Error(),
+			"message": "Format request body tidak valid. Pastikan JSON format benar. Detail: " + err.Error(),
 		})
 	}
 
-	if loginReq.Email == "" || loginReq.Password == "" {
+	if req.Email == "" || req.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"message": "Email dan password harus diisi",
+			"message": "Field wajib tidak lengkap. Email dan password harus diisi.",
 		})
 	}
 
-	alumni, err := repository.GetAlumniByEmail(db, loginReq.Email)
+	alumni, err := repository.GetAlumniByEmail(db, req.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("[AUTH] Failed login attempt for email: %s from IP: %s", loginReq.Email, c.IP())
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
-				"message": "Email atau password salah",
+				"message": "Login gagal. Email atau password salah.",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Gagal mengambil data alumni: " + err.Error(),
+			"message": "Error mengambil data alumni dari database. Detail: " + err.Error(),
 		})
 	}
 
-	if !helper.CheckPassword(loginReq.Password, alumni.PasswordHash) {
-		log.Printf("[AUTH] Failed login attempt for email: %s from IP: %s", loginReq.Email, c.IP())
+	if !utils.CheckPassword(req.Password, alumni.PasswordHash) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
-			"message": "Email atau password salah",
+			"message": "Login gagal. Email atau password salah.",
 		})
 	}
 
-	token, err := helper.GenerateToken(*alumni)
+	token, err := utils.GenerateToken(*alumni, alumni.Role.Nama)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Gagal generate token",
-			"error":   err.Error(),
+			"message": "Error membuat JWT token. Detail: " + err.Error(),
 		})
-	}
-
-	log.Printf("[AUTH] Successful login for alumni: %s (role: %s) from IP: %s", alumni.Email, alumni.Role.Nama, c.IP())
-	
-	loginResponse := model.LoginResponse{
-		Alumni: *alumni,
-		Role:   *alumni.Role,
-		Token:  token,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "Login berhasil",
-		"data":    loginResponse,
+		"message": "Login berhasil. Token JWT telah dibuat.",
+		"data": fiber.Map{
+			"alumni": alumni,
+			"token":  token,
+		},
 	})
 }
 
 func GetProfileService(c *fiber.Ctx, db *sql.DB) error {
-	alumniID, ok := c.Locals("alumni_id").(int)
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"success": false,
-			"message": "Alumni information tidak valid",
-		})
-	}
-
-	alumni, err := repository.GetAlumniByID(db, alumniID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"success": false,
-				"message": "Alumni tidak ditemukan",
-			})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Error database: " + err.Error(),
-		})
-	}
-
-	profile := model.ProfileResponse{
-		AlumniID: alumni.ID,
-		NIM:      alumni.NIM,
-		Nama:     alumni.Nama,
-		Email:    alumni.Email,
-		RoleID:   alumni.RoleID,
-		RoleName: alumni.Role.Nama,
-	}
+	alumniID := c.Locals("alumni_id").(int)
+	email := c.Locals("email").(string)
+	role := c.Locals("role").(string)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "Profile berhasil diambil",
-		"data":    profile,
+		"message": "Data profile berhasil diambil dari JWT token.",
+		"data": fiber.Map{
+			"alumni_id": alumniID,
+			"email":     email,
+			"role":      role,
+		},
 	})
 }

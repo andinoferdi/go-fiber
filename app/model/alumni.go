@@ -3,18 +3,42 @@ package model
 import "time"
 
 type Alumni struct {
-	ID          int       `json:"id" db:"id"`
-	NIM         string    `json:"nim" db:"nim"`
-	Nama        string    `json:"nama" db:"nama"`
-	Jurusan     string    `json:"jurusan" db:"jurusan"`
-	Angkatan    int       `json:"angkatan" db:"angkatan"`
-	TahunLulus  int       `json:"tahun_lulus" db:"tahun_lulus"`
-	Email       string    `json:"email" db:"email"`
-	PasswordHash string   `json:"-" db:"password_hash"`
-	RoleID      int       `json:"role_id" db:"role_id"`
-	Role        *Role     `json:"role,omitempty"`
-	NoTelepon   *string   `json:"no_telepon" db:"no_telepon"`
-	Alamat      *string   `json:"alamat" db:"alamat"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID           int       `json:"id"`
+	NIM          string    `json:"nim"`
+	Nama         string    `json:"nama"`
+	Jurusan      string    `json:"jurusan"`
+	Angkatan     int       `json:"angkatan"`
+	TahunLulus   int       `json:"tahun_lulus"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"-"` // Hidden dari JSON response
+	NoTelepon    *string   `json:"no_telepon"`
+	Alamat       *string   `json:"alamat"`
+	RoleID       int       `json:"role_id"`
+	Role         *Role     `json:"role,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type CreateAlumniRequest struct {
+	NIM        string  `json:"nim" validate:"required"`
+	Nama       string  `json:"nama" validate:"required"`
+	Jurusan    string  `json:"jurusan" validate:"required"`
+	Angkatan   int     `json:"angkatan" validate:"required"`
+	TahunLulus int     `json:"tahun_lulus" validate:"required"`
+	Email      string  `json:"email" validate:"required,email"`
+	Password   string  `json:"password" validate:"required"`
+	NoTelepon  *string `json:"no_telepon"`
+	Alamat     *string `json:"alamat"`
+	RoleID     int     `json:"role_id" validate:"required"`
+}
+
+type UpdateAlumniRequest struct {
+	Nama      string  `json:"nama" validate:"required"`
+	Jurusan   string  `json:"jurusan" validate:"required"`
+	Angkatan  int     `json:"angkatan" validate:"required"`
+	TahunLulus int    `json:"tahun_lulus" validate:"required"`
+	Email     string  `json:"email" validate:"required,email"`
+	NoTelepon *string `json:"no_telepon"`
+	Alamat    *string `json:"alamat"`
+	RoleID    int     `json:"role_id" validate:"required"`
 }
