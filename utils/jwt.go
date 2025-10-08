@@ -21,7 +21,7 @@ var jwtSecret = []byte(getJWTSecret())
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		return "your-secret-key-min-32-characters-long-for-security"
+		return "go-fiber-alumni-jwt-secret-key-minimum-32-characters-long-for-production-security"
 	}
 	return secret
 }

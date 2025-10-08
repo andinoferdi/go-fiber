@@ -5,6 +5,7 @@ import (
 	"go-fiber/app/model"
 	"go-fiber/app/repository"
 	"go-fiber/utils"
+	"os"
 	"strconv"
 	"strings"
 
@@ -228,7 +229,11 @@ func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
 
 func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	key := c.Params("key")
-	if key != "your-api-key" {
+	validAPIKey := os.Getenv("API_KEY")
+	if validAPIKey == "" {
+		validAPIKey = "default-api-key-2024"
+	}
+	if key != validAPIKey {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
 			"message": "API key tidak valid. Gunakan key yang benar untuk akses endpoint ini.",
