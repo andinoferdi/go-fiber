@@ -44,21 +44,11 @@ func GetAllPekerjaanAlumni(db *sql.DB, search, sortBy, order string, limit, offs
 	return pekerjaanList, nil
 }
 
-func CountPekerjaanAlumni(db *sql.DB, search string) (int, error) {
-	var total int
-	countQuery := `SELECT COUNT(*) FROM pekerjaan_alumni WHERE (nama_perusahaan ILIKE $1 OR posisi_jabatan ILIKE $1 OR bidang_industri ILIKE $1 OR lokasi_kerja ILIKE $1) AND is_delete IS NULL`
-	err := db.QueryRow(countQuery, "%"+search+"%").Scan(&total)
-	if err != nil && err != sql.ErrNoRows {
-		return 0, err
-	}
-	return total, nil
-}
-
 func GetPekerjaanAlumniByID(db *sql.DB, id int) (*model.PekerjaanAlumni, error) {
 	query := `
 		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri,
-		       lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja,
-		       status_pekerjaan, deskripsi_pekerjaan, is_delete, created_at, updated_at
+			   lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja,
+			   status_pekerjaan, deskripsi_pekerjaan, is_delete, created_at, updated_at
 		FROM pekerjaan_alumni 
 		WHERE id = $1 AND is_delete IS NULL
 	`
@@ -76,6 +66,16 @@ func GetPekerjaanAlumniByID(db *sql.DB, id int) (*model.PekerjaanAlumni, error) 
 	}
 	
 	return pekerjaan, nil
+}
+
+func CountPekerjaanAlumni(db *sql.DB, search string) (int, error) {
+	var total int
+	countQuery := `SELECT COUNT(*) FROM pekerjaan_alumni WHERE (nama_perusahaan ILIKE $1 OR posisi_jabatan ILIKE $1 OR bidang_industri ILIKE $1 OR lokasi_kerja ILIKE $1) AND is_delete IS NULL`
+	err := db.QueryRow(countQuery, "%"+search+"%").Scan(&total)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, err
+	}
+	return total, nil
 }
 
 func GetPekerjaanAlumniByAlumniID(db *sql.DB, alumniID int) ([]model.PekerjaanAlumni, error) {
@@ -177,6 +177,10 @@ func UpdatePekerjaanAlumni(db *sql.DB, id int, req model.UpdatePekerjaanAlumniRe
 	return pekerjaan, nil
 }
 
+	// Tugas sebelumnya soft-delete
+
+
+
 func SoftDeletePekerjaanAlumni(db *sql.DB, id int) error {
 	query := `UPDATE pekerjaan_alumni SET is_delete = $1 WHERE id = $2`
 	_, err := db.Exec(query, time.Now(), id)
@@ -212,6 +216,73 @@ func GetPekerjaanAlumniByIDWithDeleted(db *sql.DB, id int) (*model.PekerjaanAlum
 	
 	return pekerjaan, nil
 }
+
+	// Tugas UTS 1 Get All Soft Delete
+
+func GetAllSoftDeletedPekerjaanAlumni(db *sql.DB, search, sortBy, order string, limit, offset int) ([]model.PekerjaanAlumni, error) {
+	query := fmt.Sprintf(`
+		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri,
+		       lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja,
+		       status_pekerjaan, deskripsi_pekerjaan, is_delete, created_at, updated_at
+		FROM pekerjaan_alumni 
+		WHERE (nama_perusahaan ILIKE $1 OR posisi_jabatan ILIKE $1 OR bidang_industri ILIKE $1 OR lokasi_kerja ILIKE $1)
+		AND is_delete IS NOT NULL
+		ORDER BY %s %s
+		LIMIT $2 OFFSET $3
+	`, sortBy, order)
+	
+	rows, err := db.Query(query, "%"+search+"%", limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pekerjaanList []model.PekerjaanAlumni
+	for rows.Next() {
+		var pekerjaan model.PekerjaanAlumni
+		err := rows.Scan(
+			&pekerjaan.ID, &pekerjaan.AlumniID, &pekerjaan.NamaPerusahaan,
+			&pekerjaan.PosisiJabatan, &pekerjaan.BidangIndustri, &pekerjaan.LokasiKerja,
+			&pekerjaan.GajiRange, &pekerjaan.TanggalMulaiKerja, &pekerjaan.TanggalSelesaiKerja,
+			&pekerjaan.StatusPekerjaan, &pekerjaan.DeskripsiPekerjaan, &pekerjaan.IsDelete,
+			&pekerjaan.CreatedAt, &pekerjaan.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		pekerjaanList = append(pekerjaanList, pekerjaan)
+	}
+
+	return pekerjaanList, nil
+}
+
+func CountSoftDeletedPekerjaanAlumni(db *sql.DB, search string) (int, error) {
+	var total int
+	countQuery := `SELECT COUNT(*) FROM pekerjaan_alumni WHERE (nama_perusahaan ILIKE $1 OR posisi_jabatan ILIKE $1 OR bidang_industri ILIKE $1 OR lokasi_kerja ILIKE $1) AND is_delete IS NOT NULL`
+	err := db.QueryRow(countQuery, "%"+search+"%").Scan(&total)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, err
+	}
+	return total, nil
+}
+
+	// Tugas UTS 2 Soft Delete Restore
+
+
+func RestorePekerjaanAlumni(db *sql.DB, id int) error {
+	query := `UPDATE pekerjaan_alumni SET is_delete = NULL, updated_at = $1 WHERE id = $2`
+	_, err := db.Exec(query, time.Now(), id)
+	return err
+}
+
+func RestorePekerjaanAlumniByAlumniID(db *sql.DB, id int, alumniID int) error {
+	query := `UPDATE pekerjaan_alumni SET is_delete = NULL, updated_at = $1 WHERE id = $2 AND alumni_id = $3`
+	_, err := db.Exec(query, time.Now(), id, alumniID)
+	return err
+}
+
+	// Tugas UTS 3 Hard Delete
+
 
 func HardDeletePekerjaanAlumni(db *sql.DB, id int) error {
 	query := `DELETE FROM pekerjaan_alumni WHERE id = $1`

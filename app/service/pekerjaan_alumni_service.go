@@ -286,6 +286,10 @@ func UpdatePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	})
 }
 
+	// Tugas sebelumnya soft-delete
+
+
+
 func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	idStr := c.Params("id")
 	id, err := strconv.Atoi(idStr)
@@ -313,7 +317,6 @@ func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Cek apakah data sudah di-soft delete
 	if pekerjaan.IsDelete != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -321,7 +324,6 @@ func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// Validasi permission berdasarkan role
 	if role == "admin" {
 		err = repository.SoftDeletePekerjaanAlumni(db, id)
 		if err != nil {
@@ -331,7 +333,6 @@ func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 			})
 		}
 	} else {
-		// User hanya bisa soft delete pekerjaan alumni miliknya sendiri
 		if pekerjaan.AlumniID != alumniID {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
@@ -353,6 +354,140 @@ func SoftDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		"message": "Data pekerjaan alumni berhasil di-soft delete (ditandai sebagai terhapus).",
 	})
 }
+
+	// Tugas UTS 1 Get All Soft Delete
+
+
+func GetAllSoftDeletedPekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	sortBy := c.Query("sortBy", "id")
+	order := c.Query("order", "asc")
+	search := c.Query("search", "")
+	offset := (page - 1) * limit
+
+	sortByWhitelist := map[string]bool{"id": true, "alumni_id": true, "nama_perusahaan": true, "posisi_jabatan": true, "bidang_industri": true, "lokasi_kerja": true, "tanggal_mulai_kerja": true, "status_pekerjaan": true, "created_at": true, "is_delete": true}
+	if !sortByWhitelist[sortBy] {
+		sortBy = "id"
+	}
+
+	if strings.ToLower(order) != "desc" {
+		order = "asc"
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	pekerjaanList, err := repository.GetAllSoftDeletedPekerjaanAlumni(db, search, sortBy, order, limit, offset)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data pekerjaan alumni yang sudah dihapus dari database. Detail: " + err.Error(),
+		})
+	}
+
+	total, err := repository.CountSoftDeletedPekerjaanAlumni(db, search)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error menghitung total data pekerjaan alumni yang sudah dihapus untuk pagination. Detail: " + err.Error(),
+		})
+	}
+
+	pages := (total + limit - 1) / limit
+	if pages == 0 {
+		pages = 1
+	}
+
+	response := model.PekerjaanAlumniResponse{
+		Data: pekerjaanList,
+		Meta: model.MetaInfo{
+			Page:    page,
+			Limit:   limit,
+			Total:   total,
+			Pages:   pages,
+			SortBy:  sortBy,
+			Order:   order,
+			Search:  search,
+		},
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
+}
+	// Tugas UTS 2 Soft Delete Restore
+
+
+func RestorePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Parameter ID tidak valid. ID harus berupa angka positif.",
+		})
+	}
+
+	alumniID := c.Locals("alumni_id").(int)
+	role := c.Locals("role").(string)
+
+	pekerjaan, err := repository.GetPekerjaanAlumniByIDWithDeleted(db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"message": "Data pekerjaan alumni dengan ID tersebut tidak ditemukan di database.",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data pekerjaan alumni dari database. Detail: " + err.Error(),
+		})
+	}
+
+	if pekerjaan.IsDelete == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Data pekerjaan alumni tidak dalam status terhapus (soft delete).",
+		})
+	}
+
+	if role == "admin" {
+		err = repository.RestorePekerjaanAlumni(db, id)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"message": "Error mengembalikan data pekerjaan alumni dari trash. Detail: " + err.Error(),
+			})
+		}
+	} else {
+		if pekerjaan.AlumniID != alumniID {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Akses ditolak. Anda hanya bisa mengembalikan pekerjaan alumni milik Anda sendiri.",
+			})
+		}
+		
+		err = repository.RestorePekerjaanAlumniByAlumniID(db, id, alumniID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"message": "Error mengembalikan data pekerjaan alumni dari trash. Detail: " + err.Error(),
+			})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Data pekerjaan alumni berhasil dikembalikan dari trash.",
+	})
+}
+
+	// Tugas UTS 3 Hard Delete
+
 
 func HardDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	idStr := c.Params("id")
