@@ -12,3 +12,4 @@ func GetLogger() *log.Logger {
 	}
 	return log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
+

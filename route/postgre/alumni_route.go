@@ -3,13 +3,13 @@ package route
 import (
 	"database/sql"
 	postgre "go-fiber/app/service/postgre"
-	"go-fiber/middleware"
+	middleware "go-fiber/middleware/postgre"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func AlumniRoutes(app *fiber.App, db *sql.DB) {
-	api := app.Group("/go-fiber")
+	api := app.Group("/go-fiber-postgre")
 
 	api.Post("/login", func(c *fiber.Ctx) error {
 		return postgre.LoginService(c, db)

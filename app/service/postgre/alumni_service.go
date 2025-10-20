@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	model "go-fiber/app/model/postgre"
 	repository "go-fiber/app/repository/postgre"
-	"go-fiber/utils"
+	utilspostgre "go-fiber/utils/postgre"
 	"os"
 	"strconv"
 	"strings"
@@ -129,7 +129,7 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	passwordHash, err := utils.HashPassword(req.Password)
+	passwordHash, err := utilspostgre.HashPassword(req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"go-fiber/utils"
+	utilsmongo "go-fiber/utils/mongo"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,7 +16,7 @@ func AuthRequired() fiber.Handler {
 			})
 		}
 
-		tokenString := utils.ExtractTokenFromHeader(authHeader)
+		tokenString := utilsmongo.ExtractTokenFromHeader(authHeader)
 		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
@@ -24,7 +24,7 @@ func AuthRequired() fiber.Handler {
 			})
 		}
 
-		claims, err := utils.ValidateToken(tokenString)
+		claims, err := utilsmongo.ValidateToken(tokenString)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
@@ -66,3 +66,4 @@ func UserOrAdmin() fiber.Handler {
 		return c.Next()
 	}
 }
+

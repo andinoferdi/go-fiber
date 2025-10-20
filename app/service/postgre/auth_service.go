@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	model "go-fiber/app/model/postgre"
 	repository "go-fiber/app/repository/postgre"
-	"go-fiber/utils"
+	utilspostgre "go-fiber/utils/postgre"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -39,14 +39,14 @@ func LoginService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	if !utils.CheckPassword(req.Password, alumni.PasswordHash) {
+	if !utilspostgre.CheckPassword(req.Password, alumni.PasswordHash) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
 			"message": "Login gagal. Email atau password salah.",
 		})
 	}
 
-	token, err := utils.GenerateToken(*alumni, alumni.Role.Nama)
+	token, err := utilspostgre.GenerateToken(*alumni, alumni.Role.Nama)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,

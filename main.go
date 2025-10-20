@@ -1,9 +1,15 @@
 package main
 
 import (
+	repositorymongo "go-fiber/app/repository/mongo"
+	servicemongo "go-fiber/app/service/mongo"
 	"go-fiber/config"
+	configmongo "go-fiber/config/mongo"
+
 	"go-fiber/database"
 	"go-fiber/middleware"
+	routemongo "go-fiber/route/mongo"
+
 	routepostgre "go-fiber/route/postgre"
 	"log"
 	"os"
@@ -11,14 +17,37 @@ import (
 
 func main() {
 	config.LoadEnv()
-	db := database.ConnectDB()
-	defer db.Close()
 	
-	app := config.NewApp(db)
+	postgresDB := database.ConnectDB()
+	defer postgresDB.Close()
+	
+	mongoDB := database.ConnectMongoDB()
+	
+	// Run MongoDB migrations
+	if err := database.RunMigrations(mongoDB); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+	
+	roleRepo := repositorymongo.NewRoleRepository(mongoDB)
+	roleService := servicemongo.NewRoleService(roleRepo)
+	
+	alumniRepo := repositorymongo.NewAlumniRepository(mongoDB)
+	alumniService := servicemongo.NewAlumniService(alumniRepo)
+	
+	authService := servicemongo.NewAuthService(alumniRepo)
+	
+	pekerjaanRepo := repositorymongo.NewPekerjaanAlumniRepository(mongoDB)
+	pekerjaanService := servicemongo.NewPekerjaanAlumniService(pekerjaanRepo)
+	
+	app := configmongo.NewApp()
 	app.Use(middleware.LoggerMiddleware)
 	
-	routepostgre.AlumniRoutes(app, db)
-	routepostgre.PekerjaanRoutes(app, db)
+	routepostgre.AlumniRoutes(app, postgresDB)
+	routepostgre.PekerjaanRoutes(app, postgresDB)
+	
+	routemongo.AlumniRoutes(app, alumniService, authService)
+	routemongo.RoleRoutes(app, roleService)
+	routemongo.PekerjaanRoutes(app, pekerjaanService)
 	
 	port := os.Getenv("APP_PORT")
 	if port == "" {

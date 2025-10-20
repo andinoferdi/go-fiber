@@ -3,13 +3,13 @@ package route
 import (
 	"database/sql"
 	postgre "go-fiber/app/service/postgre"
-	"go-fiber/middleware"
+	middleware "go-fiber/middleware/postgre"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func PekerjaanRoutes(app *fiber.App, db *sql.DB) {
-	api := app.Group("/go-fiber")
+	api := app.Group("/go-fiber-postgre")
 	protected := api.Group("", middleware.AuthRequired())
 
 	pekerjaan := protected.Group("/pekerjaan")
