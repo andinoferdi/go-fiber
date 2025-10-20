@@ -2,7 +2,8 @@ package service
 
 import (
 	"database/sql"
-	"go-fiber/app/repository"
+	model "go-fiber/app/model/postgre"
+	repository "go-fiber/app/repository/postgre"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,11 +18,13 @@ func GetAllRolesService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data roles berhasil diambil dari database.",
-		"data":    roles,
-	})
+	response := model.GetAllRolesResponse{
+		Success: true,
+		Message: "Data roles berhasil diambil dari database.",
+		Data:    roles,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func GetRoleByIDService(c *fiber.Ctx, db *sql.DB) error {
@@ -48,17 +51,17 @@ func GetRoleByIDService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data role berhasil diambil dari database.",
-		"data":    role,
-	})
+	response := model.GetRoleByIDResponse{
+		Success: true,
+		Message: "Data role berhasil diambil dari database.",
+		Data:    *role,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func CreateRoleService(c *fiber.Ctx, db *sql.DB) error {
-	var req struct {
-		Nama string `json:"nama" validate:"required"`
-	}
+	var req model.CreateRoleRequest
 	
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -82,11 +85,13 @@ func CreateRoleService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"success": true,
-		"message": "Data role berhasil disimpan ke database.",
-		"data":    role,
-	})
+	response := model.CreateRoleResponse{
+		Success: true,
+		Message: "Data role berhasil disimpan ke database.",
+		Data:    *role,
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
 func UpdateRoleService(c *fiber.Ctx, db *sql.DB) error {
@@ -99,9 +104,7 @@ func UpdateRoleService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	var req struct {
-		Nama string `json:"nama" validate:"required"`
-	}
+	var req model.UpdateRoleRequest
 	
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -131,11 +134,13 @@ func UpdateRoleService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data role berhasil diupdate di database.",
-		"data":    role,
-	})
+	response := model.UpdateRoleResponse{
+		Success: true,
+		Message: "Data role berhasil diupdate di database.",
+		Data:    *role,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func DeleteRoleService(c *fiber.Ctx, db *sql.DB) error {
@@ -156,8 +161,10 @@ func DeleteRoleService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data role berhasil dihapus dari database.",
-	})
+	response := model.DeleteRoleResponse{
+		Success: true,
+		Message: "Data role berhasil dihapus dari database.",
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }

@@ -2,8 +2,8 @@ package service
 
 import (
 	"database/sql"
-	"go-fiber/app/model"
-	"go-fiber/app/repository"
+	model "go-fiber/app/model/postgre"
+	repository "go-fiber/app/repository/postgre"
 	"go-fiber/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -69,13 +69,13 @@ func GetProfileService(c *fiber.Ctx, db *sql.DB) error {
 	email := c.Locals("email").(string)
 	role := c.Locals("role").(string)
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data profile berhasil diambil dari JWT token.",
-		"data": fiber.Map{
-			"alumni_id": alumniID,
-			"email":     email,
-			"role":      role,
-		},
-	})
+	response := model.GetProfileResponse{
+		Success: true,
+		Message: "Data profile berhasil diambil dari JWT token.",
+	}
+	response.Data.AlumniID = alumniID
+	response.Data.Email = email
+	response.Data.Role = role
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }

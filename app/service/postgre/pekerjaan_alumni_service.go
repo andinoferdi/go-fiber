@@ -2,8 +2,8 @@ package service
 
 import (
 	"database/sql"
-	"go-fiber/app/model"
-	"go-fiber/app/repository"
+	model "go-fiber/app/model/postgre"
+	repository "go-fiber/app/repository/postgre"
 	"strconv"
 	"strings"
 	"time"
@@ -364,6 +364,39 @@ func HardDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
+	alumniID := c.Locals("alumni_id").(int)
+	role := c.Locals("role").(string)
+
+	pekerjaan, err := repository.GetPekerjaanAlumniByIDWithDeleted(db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"message": "Data pekerjaan alumni dengan ID tersebut tidak ditemukan di database.",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data pekerjaan alumni dari database. Detail: " + err.Error(),
+		})
+	}
+
+	if pekerjaan.IsDelete == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Data pekerjaan alumni harus di-soft delete terlebih dahulu sebelum bisa dihapus permanen.",
+		})
+	}
+
+	if role != "admin" {
+		if pekerjaan.AlumniID != alumniID {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Akses ditolak. Anda hanya bisa menghapus permanen pekerjaan alumni milik Anda sendiri.",
+			})
+		}
+	}
+
 	err = repository.HardDeletePekerjaanAlumni(db, id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -375,5 +408,97 @@ func HardDeletePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Data pekerjaan alumni berhasil dihapus secara permanen dari database.",
+	})
+}
+
+func GetSoftDeletedPekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	alumniID := c.Locals("alumni_id").(int)
+	role := c.Locals("role").(string)
+
+	var pekerjaanList []model.PekerjaanAlumni
+	var err error
+
+	if role == "admin" {
+		pekerjaanList, err = repository.GetAllSoftDeletedPekerjaanAlumni(db)
+	} else {
+		pekerjaanList, err = repository.GetSoftDeletedPekerjaanAlumni(db, alumniID)
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data pekerjaan alumni yang di-soft delete dari database. Detail: " + err.Error(),
+		})
+	}
+
+	if len(pekerjaanList) == 0 {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": true,
+			"message": "Belum ada data pekerjaan alumni yang di-soft delete.",
+			"data":    []model.PekerjaanAlumni{},
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Data pekerjaan alumni yang di-soft delete berhasil diambil dari database.",
+		"data":    pekerjaanList,
+	})
+}
+
+func RestorePekerjaanAlumniService(c *fiber.Ctx, db *sql.DB) error {
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Parameter ID tidak valid. ID harus berupa angka positif.",
+		})
+	}
+
+	alumniID := c.Locals("alumni_id").(int)
+	role := c.Locals("role").(string)
+
+	pekerjaan, err := repository.GetPekerjaanAlumniByIDWithDeleted(db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"message": "Data pekerjaan alumni dengan ID tersebut tidak ditemukan di database.",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data pekerjaan alumni dari database. Detail: " + err.Error(),
+		})
+	}
+
+	if pekerjaan.IsDelete == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Data pekerjaan alumni belum di-soft delete, tidak bisa di-restore.",
+		})
+	}
+
+	if role != "admin" {
+		if pekerjaan.AlumniID != alumniID {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Akses ditolak. Anda hanya bisa restore pekerjaan alumni milik Anda sendiri.",
+			})
+		}
+	}
+
+	err = repository.RestorePekerjaanAlumni(db, id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error restore data pekerjaan alumni dari database. Detail: " + err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Data pekerjaan alumni berhasil di-restore.",
 	})
 }

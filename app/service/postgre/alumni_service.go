@@ -2,8 +2,8 @@ package service
 
 import (
 	"database/sql"
-	"go-fiber/app/model"
-	"go-fiber/app/repository"
+	model "go-fiber/app/model/postgre"
+	repository "go-fiber/app/repository/postgre"
 	"go-fiber/utils"
 	"os"
 	"strconv"
@@ -97,11 +97,13 @@ func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data alumni berhasil diambil dari database.",
-		"data":    alumni,
-	})
+	response := model.GetAlumniByIDResponse{
+		Success: true,
+		Message: "Data alumni berhasil diambil dari database.",
+		Data:    *alumni,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
@@ -143,11 +145,13 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"success": true,
-		"message": "Data alumni berhasil disimpan ke database.",
-		"data":    alumni,
-	})
+	response := model.CreateAlumniResponse{
+		Success: true,
+		Message: "Data alumni berhasil disimpan ke database.",
+		Data:    *alumni,
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
 func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
@@ -196,11 +200,13 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data alumni berhasil diupdate di database.",
-		"data":    alumni,
-	})
+	response := model.UpdateAlumniResponse{
+		Success: true,
+		Message: "Data alumni berhasil diupdate di database.",
+		Data:    *alumni,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
@@ -221,10 +227,12 @@ func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Data alumni berhasil dihapus dari database.",
-	})
+	response := model.DeleteAlumniResponse{
+		Success: true,
+		Message: "Data alumni berhasil dihapus dari database.",
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
@@ -251,11 +259,13 @@ func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
 	alumni, err := repository.CheckAlumniByNim(db, nim)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return c.Status(fiber.StatusOK).JSON(fiber.Map{
-				"success":  true,
-				"message":  "Mahasiswa dengan NIM tersebut bukan alumni.",
-				"isAlumni": false,
-			})
+			response := model.CheckAlumniResponse{
+				Success:  true,
+				Message:  "Mahasiswa dengan NIM tersebut bukan alumni.",
+				IsAlumni: false,
+				Data:     nil,
+			}
+			return c.Status(fiber.StatusOK).JSON(response)
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -263,10 +273,12 @@ func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 	
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success":  true,
-		"message":  "Data alumni berhasil ditemukan di database.",
-		"isAlumni": true,
-		"data":     alumni,
-	})
+	response := model.CheckAlumniResponse{
+		Success:  true,
+		Message:  "Data alumni berhasil ditemukan di database.",
+		IsAlumni: true,
+		Data:     alumni,
+	}
+	
+	return c.Status(fiber.StatusOK).JSON(response)
 }

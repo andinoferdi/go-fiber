@@ -68,3 +68,52 @@ type UpdatePekerjaanAlumniRepositoryRequest struct {
 	StatusPekerjaan     string     `json:"status_pekerjaan"`
 	DeskripsiPekerjaan  *string    `json:"deskripsi_pekerjaan"`
 }
+
+type SoftDeletePekerjaanAlumniRequest struct {
+	ID int `json:"id" validate:"required"`
+}
+
+type GetPekerjaanAlumniByIDResponse struct {
+	Success bool            `json:"success"`
+	Message string          `json:"message"`
+	Data    PekerjaanAlumni `json:"data"`
+}
+
+type GetPekerjaanAlumniByAlumniIDResponse struct {
+	Success bool               `json:"success"`
+	Message string             `json:"message"`
+	Data    []PekerjaanAlumni  `json:"data"`
+}
+
+type CreatePekerjaanAlumniResponse struct {
+	Success bool            `json:"success"`
+	Message string          `json:"message"`
+	Data    PekerjaanAlumni `json:"data"`
+}
+
+type UpdatePekerjaanAlumniResponse struct {
+	Success bool            `json:"success"`
+	Message string          `json:"message"`
+	Data    PekerjaanAlumni `json:"data"`
+}
+
+type SoftDeletePekerjaanAlumniResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type HardDeletePekerjaanAlumniResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type GetSoftDeletedPekerjaanAlumniResponse struct {
+	Success bool              `json:"success"`
+	Message string            `json:"message"`
+	Data    []PekerjaanAlumni `json:"data"`
+}
+
+type RestorePekerjaanAlumniResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}

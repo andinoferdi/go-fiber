@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"go-fiber/app/model"
+	model "go-fiber/app/model/postgre"
 	"os"
 	"time"
 

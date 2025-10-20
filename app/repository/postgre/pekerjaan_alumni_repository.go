@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"go-fiber/app/model"
+	model "go-fiber/app/model/postgre"
 	"time"
 )
 
@@ -215,6 +215,82 @@ func GetPekerjaanAlumniByIDWithDeleted(db *sql.DB, id int) (*model.PekerjaanAlum
 
 func HardDeletePekerjaanAlumni(db *sql.DB, id int) error {
 	query := `DELETE FROM pekerjaan_alumni WHERE id = $1`
+	_, err := db.Exec(query, id)
+	return err
+}
+
+func GetSoftDeletedPekerjaanAlumni(db *sql.DB, alumniID int) ([]model.PekerjaanAlumni, error) {
+	query := `
+		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri,
+		       lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja,
+		       status_pekerjaan, deskripsi_pekerjaan, is_delete, created_at, updated_at
+		FROM pekerjaan_alumni 
+		WHERE alumni_id = $1 AND is_delete IS NOT NULL
+		ORDER BY is_delete DESC
+	`
+	
+	rows, err := db.Query(query, alumniID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pekerjaanList []model.PekerjaanAlumni
+	for rows.Next() {
+		var pekerjaan model.PekerjaanAlumni
+		err := rows.Scan(
+			&pekerjaan.ID, &pekerjaan.AlumniID, &pekerjaan.NamaPerusahaan,
+			&pekerjaan.PosisiJabatan, &pekerjaan.BidangIndustri, &pekerjaan.LokasiKerja,
+			&pekerjaan.GajiRange, &pekerjaan.TanggalMulaiKerja, &pekerjaan.TanggalSelesaiKerja,
+			&pekerjaan.StatusPekerjaan, &pekerjaan.DeskripsiPekerjaan, &pekerjaan.IsDelete,
+			&pekerjaan.CreatedAt, &pekerjaan.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		pekerjaanList = append(pekerjaanList, pekerjaan)
+	}
+
+	return pekerjaanList, nil
+}
+
+func GetAllSoftDeletedPekerjaanAlumni(db *sql.DB) ([]model.PekerjaanAlumni, error) {
+	query := `
+		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri,
+		       lokasi_kerja, gaji_range, tanggal_mulai_kerja, tanggal_selesai_kerja,
+		       status_pekerjaan, deskripsi_pekerjaan, is_delete, created_at, updated_at
+		FROM pekerjaan_alumni 
+		WHERE is_delete IS NOT NULL
+		ORDER BY is_delete DESC
+	`
+	
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pekerjaanList []model.PekerjaanAlumni
+	for rows.Next() {
+		var pekerjaan model.PekerjaanAlumni
+		err := rows.Scan(
+			&pekerjaan.ID, &pekerjaan.AlumniID, &pekerjaan.NamaPerusahaan,
+			&pekerjaan.PosisiJabatan, &pekerjaan.BidangIndustri, &pekerjaan.LokasiKerja,
+			&pekerjaan.GajiRange, &pekerjaan.TanggalMulaiKerja, &pekerjaan.TanggalSelesaiKerja,
+			&pekerjaan.StatusPekerjaan, &pekerjaan.DeskripsiPekerjaan, &pekerjaan.IsDelete,
+			&pekerjaan.CreatedAt, &pekerjaan.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		pekerjaanList = append(pekerjaanList, pekerjaan)
+	}
+
+	return pekerjaanList, nil
+}
+
+func RestorePekerjaanAlumni(db *sql.DB, id int) error {
+	query := `UPDATE pekerjaan_alumni SET is_delete = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
 	_, err := db.Exec(query, id)
 	return err
 }

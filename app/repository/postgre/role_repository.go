@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"go-fiber/app/model"
+	model "go-fiber/app/model/postgre"
 )
 
 func GetAllRoles(db *sql.DB) ([]model.Role, error) {

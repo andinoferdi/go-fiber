@@ -42,3 +42,33 @@ type UpdateAlumniRequest struct {
 	Alamat    *string `json:"alamat"`
 	RoleID    int     `json:"role_id" validate:"required"`
 }
+
+type GetAlumniByIDResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    Alumni `json:"data"`
+}
+
+type CreateAlumniResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    Alumni `json:"data"`
+}
+
+type UpdateAlumniResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    Alumni `json:"data"`
+}
+
+type DeleteAlumniResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type CheckAlumniResponse struct {
+	Success  bool    `json:"success"`
+	Message  string  `json:"message"`
+	IsAlumni bool    `json:"isAlumni"`
+	Data     *Alumni `json:"data,omitempty"`
+}

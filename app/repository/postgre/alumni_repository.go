@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"go-fiber/app/model"
+	model "go-fiber/app/model/postgre"
 	"time"
 )
 

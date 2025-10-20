@@ -4,7 +4,7 @@ import (
 	"go-fiber/config"
 	"go-fiber/database"
 	"go-fiber/middleware"
-	"go-fiber/route"
+	routepostgre "go-fiber/route/postgre"
 	"log"
 	"os"
 )
@@ -17,8 +17,8 @@ func main() {
 	app := config.NewApp(db)
 	app.Use(middleware.LoggerMiddleware)
 	
-	route.AlumniRoutes(app, db)
-	route.PekerjaanRoutes(app, db)
+	routepostgre.AlumniRoutes(app, db)
+	routepostgre.PekerjaanRoutes(app, db)
 	
 	port := os.Getenv("APP_PORT")
 	if port == "" {
