@@ -39,6 +39,9 @@ func main() {
 	pekerjaanRepo := repositorymongo.NewPekerjaanAlumniRepository(mongoDB)
 	pekerjaanService := servicemongo.NewPekerjaanAlumniService(pekerjaanRepo)
 	
+	fileRepo := repositorymongo.NewFileRepository(mongoDB)
+	fileService := servicemongo.NewFileService(fileRepo, "./uploads")
+	
 	app := configmongo.NewApp()
 	app.Use(middleware.LoggerMiddleware)
 	
@@ -48,6 +51,7 @@ func main() {
 	routemongo.AlumniRoutes(app, alumniService, authService)
 	routemongo.RoleRoutes(app, roleService)
 	routemongo.PekerjaanRoutes(app, pekerjaanService)
+	routemongo.FileRoutes(app, fileService)
 	
 	port := os.Getenv("APP_PORT")
 	if port == "" {

@@ -43,7 +43,7 @@ func RunMigrations(db *mongo.Database) error {
 func dropCollections(ctx context.Context, db *mongo.Database) error {
 	log.Println("Dropping existing collections...")
 
-	collections := []string{"roles", "alumni", "pekerjaan_alumni"}
+	collections := []string{"roles", "alumni", "pekerjaan_alumni", "files"}
 	
 	for _, collectionName := range collections {
 		collection := db.Collection(collectionName)
@@ -118,6 +118,24 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	log.Println("Created indexes for pekerjaan_alumni collection")
+
+	// Files collection indexes
+	filesCollection := db.Collection("files")
+	filesIndexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{{Key: "alumni_id", Value: 1}},
+		},
+		{
+			Keys: bson.D{{Key: "category", Value: 1}},
+		},
+		{
+			Keys: bson.D{{Key: "file_type", Value: 1}},
+		},
+	}
+	if _, err := filesCollection.Indexes().CreateMany(ctx, filesIndexes); err != nil {
+		return err
+	}
+	log.Println("Created indexes for files collection")
 
 	return nil
 }
