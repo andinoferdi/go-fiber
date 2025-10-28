@@ -8,16 +8,14 @@ import (
 )
 
 type AlumniToken struct {
-	ID     string
-	Email  string
-	RoleID string
-	Role   string
+	ID    string
+	Email string
+	Role  string
 }
 
 type JWTClaims struct {
 	AlumniID string `json:"alumni_id"`
 	Email    string `json:"email"`
-	RoleID   string `json:"role_id"`
 	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
@@ -36,7 +34,6 @@ func GenerateToken(alumniToken AlumniToken) (string, error) {
 	claims := JWTClaims{
 		AlumniID: alumniToken.ID,
 		Email:    alumniToken.Email,
-		RoleID:   alumniToken.RoleID,
 		Role:     alumniToken.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),

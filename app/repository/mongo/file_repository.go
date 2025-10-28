@@ -45,10 +45,10 @@ func (r *FileRepository) CreateFile(ctx context.Context, file *model.File) (*mod
 func (r *FileRepository) FindFilesByAlumniID(ctx context.Context, alumniID string) ([]model.File, error) {
 	objID, err := primitive.ObjectIDFromHex(alumniID)
 	if err != nil {
-		return nil, errors.New("Alumni ID tidak valid")
+		return nil, errors.New("alumni ID tidak valid")
 	}
 
-	cursor, err := r.collection.Find(ctx, bson.M{"alumni_id": objID})
+	cursor, err := r.collection.Find(ctx, bson.M{"alumni_info.alumni_id": objID})
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (r *FileRepository) DeleteFile(ctx context.Context, id string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.New("File tidak ditemukan")
+		return errors.New("file tidak ditemukan")
 	}
 
 	return nil

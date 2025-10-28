@@ -8,7 +8,7 @@ import (
 
 type File struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	AlumniID     primitive.ObjectID `bson:"alumni_id" json:"alumni_id"`
+	AlumniInfo   AlumniInfo         `bson:"alumni_info" json:"alumni_info"`
 	FileName     string             `bson:"file_name" json:"file_name"`
 	OriginalName string             `bson:"original_name" json:"original_name"`
 	FilePath     string             `bson:"file_path" json:"file_path"`
@@ -20,12 +20,12 @@ type File struct {
 }
 
 type UploadFileRequest struct {
-	AlumniID string `json:"alumni_id" validate:"required"`
+	AlumniInfo AlumniInfo `json:"alumni_info" validate:"required"`
 }
 
 type FileResponse struct {
-	ID           string    `json:"id"`
-	AlumniID     string    `json:"alumni_id"`
+	ID           string      `json:"id"`
+	AlumniInfo   AlumniInfo  `json:"alumni_info"`
 	FileName     string    `json:"file_name"`
 	OriginalName string    `json:"original_name"`
 	FilePath     string    `json:"file_path"`

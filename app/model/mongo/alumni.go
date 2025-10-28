@@ -17,8 +17,7 @@ type Alumni struct {
 	PasswordHash string              `bson:"password_hash" json:"-"`
 	NoTelepon    *string             `bson:"no_telepon,omitempty" json:"no_telepon,omitempty"`
 	Alamat       *string             `bson:"alamat,omitempty" json:"alamat,omitempty"`
-	RoleID       primitive.ObjectID  `bson:"role_id" json:"role_id"`
-	Role         *Role               `bson:"role,omitempty" json:"role,omitempty"`
+	Role         string              `bson:"role" json:"role"`
 	CreatedAt    time.Time           `bson:"created_at" json:"created_at"`
 	UpdatedAt    time.Time           `bson:"updated_at" json:"updated_at"`
 }
@@ -33,7 +32,7 @@ type CreateAlumniRequest struct {
 	Password   string  `bson:"password" json:"password" validate:"required"`
 	NoTelepon  *string `bson:"no_telepon,omitempty" json:"no_telepon"`
 	Alamat     *string `bson:"alamat,omitempty" json:"alamat"`
-	RoleID     string  `bson:"role_id" json:"role_id" validate:"required"`
+	Role       string  `bson:"role" json:"role" validate:"required,oneof=admin user"`
 }
 
 type UpdateAlumniRequest struct {
@@ -44,6 +43,6 @@ type UpdateAlumniRequest struct {
 	Email      string  `bson:"email" json:"email" validate:"required,email"`
 	NoTelepon  *string `bson:"no_telepon,omitempty" json:"no_telepon"`
 	Alamat     *string `bson:"alamat,omitempty" json:"alamat"`
-	RoleID     string  `bson:"role_id" json:"role_id" validate:"required"`
+	Role       string  `bson:"role" json:"role" validate:"required,oneof=admin user"`
 }
 

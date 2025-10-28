@@ -17,12 +17,14 @@ import (
 
 type FileService struct {
 	repo        repository.IFileRepository
+	alumniRepo  repository.IAlumniRepository
 	uploadPath  string
 }
 
-func NewFileService(repo repository.IFileRepository, uploadPath string) *FileService {
+func NewFileService(repo repository.IFileRepository, alumniRepo repository.IAlumniRepository, uploadPath string) *FileService {
 	return &FileService{
 		repo:       repo,
+		alumniRepo: alumniRepo,
 		uploadPath: uploadPath,
 	}
 }
@@ -96,6 +98,25 @@ func (s *FileService) uploadFile(c *fiber.Ctx, category string, allowedTypes []s
 		})
 	}
 
+	// Query alumni data untuk populate AlumniInfo
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	alumni, err := s.alumniRepo.FindAlumniByID(ctx, alumniID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data alumni. Detail: " + err.Error(),
+		})
+	}
+
+	if alumni == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "Alumni tidak ditemukan",
+		})
+	}
+
 	ext := filepath.Ext(fileHeader.Filename)
 	newFileName := uuid.New().String() + ext
 	filePath := filepath.Join(s.uploadPath, category, newFileName)
@@ -137,7 +158,12 @@ func (s *FileService) uploadFile(c *fiber.Ctx, category string, allowedTypes []s
 	}
 
 	fileModel := &model.File{
-		AlumniID:     alumniObjID,
+		AlumniInfo: model.AlumniInfo{
+			AlumniID: alumniObjID,
+			NIM:      alumni.NIM,
+			Nama:     alumni.Nama,
+			Email:    alumni.Email,
+		},
 		FileName:     newFileName,
 		OriginalName: fileHeader.Filename,
 		FilePath:     filePath,
@@ -145,9 +171,6 @@ func (s *FileService) uploadFile(c *fiber.Ctx, category string, allowedTypes []s
 		FileType:     contentType,
 		Category:     category,
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	createdFile, err := s.repo.CreateFile(ctx, fileModel)
 	if err != nil {
@@ -243,7 +266,7 @@ func (s *FileService) isAllowedType(contentType string, allowedTypes []string) b
 func (s *FileService) toFileResponse(file *model.File) *model.FileResponse {
 	return &model.FileResponse{
 		ID:           file.ID.Hex(),
-		AlumniID:     file.AlumniID.Hex(),
+		AlumniInfo:   file.AlumniInfo,
 		FileName:     file.FileName,
 		OriginalName: file.OriginalName,
 		FilePath:     file.FilePath,

@@ -34,7 +34,6 @@ func AuthRequired() fiber.Handler {
 
 		c.Locals("alumni_id", claims.AlumniID)
 		c.Locals("email", claims.Email)
-		c.Locals("role_id", claims.RoleID)
 		c.Locals("role", claims.Role)
 
 		return c.Next()

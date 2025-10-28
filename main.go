@@ -28,8 +28,6 @@ func main() {
 		log.Fatalf("Migration failed: %v", err)
 	}
 	
-	roleRepo := repositorymongo.NewRoleRepository(mongoDB)
-	roleService := servicemongo.NewRoleService(roleRepo)
 	
 	alumniRepo := repositorymongo.NewAlumniRepository(mongoDB)
 	alumniService := servicemongo.NewAlumniService(alumniRepo)
@@ -40,7 +38,7 @@ func main() {
 	pekerjaanService := servicemongo.NewPekerjaanAlumniService(pekerjaanRepo)
 	
 	fileRepo := repositorymongo.NewFileRepository(mongoDB)
-	fileService := servicemongo.NewFileService(fileRepo, "./uploads")
+	fileService := servicemongo.NewFileService(fileRepo, alumniRepo, "./uploads")
 	
 	app := configmongo.NewApp()
 	app.Use(middleware.LoggerMiddleware)
@@ -49,7 +47,6 @@ func main() {
 	routepostgre.PekerjaanRoutes(app, postgresDB)
 	
 	routemongo.AlumniRoutes(app, alumniService, authService)
-	routemongo.RoleRoutes(app, roleService)
 	routemongo.PekerjaanRoutes(app, pekerjaanService)
 	routemongo.FileRoutes(app, fileService)
 	

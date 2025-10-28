@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PekerjaanAlumniService struct {
@@ -100,6 +99,14 @@ func (s *PekerjaanAlumniService) CreatePekerjaanAlumniService(c *fiber.Ctx) erro
 		})
 	}
 
+	// Validasi AlumniInfo
+	if req.AlumniInfo.NIM == "" || req.AlumniInfo.Nama == "" || req.AlumniInfo.Email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "AlumniInfo tidak lengkap. NIM, Nama, dan Email harus diisi.",
+		})
+	}
+
 	validStatus := map[string]bool{"aktif": true, "selesai": true, "resigned": true}
 	if !validStatus[req.StatusPekerjaan] {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -128,20 +135,12 @@ func (s *PekerjaanAlumniService) CreatePekerjaanAlumniService(c *fiber.Ctx) erro
 		tanggalSelesaiKerja = &parsedTanggalSelesai
 	}
 
-	alumniObjID, err := primitive.ObjectIDFromHex(req.AlumniID)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": "Alumni ID tidak valid.",
-		})
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	now := time.Now()
 	pekerjaan := &model.PekerjaanAlumni{
-		AlumniID:            alumniObjID,
+		AlumniInfo:          req.AlumniInfo,
 		NamaPerusahaan:      req.NamaPerusahaan,
 		PosisiJabatan:       req.PosisiJabatan,
 		BidangIndustri:      req.BidangIndustri,
@@ -234,7 +233,7 @@ func (s *PekerjaanAlumniService) UpdatePekerjaanAlumniService(c *fiber.Ctx) erro
 	}
 
 	pekerjaan := &model.PekerjaanAlumni{
-		AlumniID:            existingPekerjaan.AlumniID,
+		AlumniInfo:          existingPekerjaan.AlumniInfo,
 		NamaPerusahaan:      req.NamaPerusahaan,
 		PosisiJabatan:       req.PosisiJabatan,
 		BidangIndustri:      req.BidangIndustri,

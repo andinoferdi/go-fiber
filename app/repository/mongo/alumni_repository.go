@@ -22,35 +22,15 @@ type IAlumniRepository interface {
 }
 
 type AlumniRepository struct {
-	collection     *mongo.Collection
-	roleCollection *mongo.Collection
+	collection *mongo.Collection
 }
 
 func NewAlumniRepository(db *mongo.Database) IAlumniRepository {
 	return &AlumniRepository{
-		collection:     db.Collection("alumni"),
-		roleCollection: db.Collection("roles"),
+		collection: db.Collection("alumni"),
 	}
 }
 
-func (r *AlumniRepository) populateRole(ctx context.Context, alumni *model.Alumni) error {
-	if alumni.RoleID.IsZero() {
-		return nil
-	}
-
-	var role model.Role
-	filter := bson.M{"_id": alumni.RoleID}
-	err := r.roleCollection.FindOne(ctx, filter).Decode(&role)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil
-		}
-		return err
-	}
-
-	alumni.Role = &role
-	return nil
-}
 
 func (r *AlumniRepository) CreateAlumni(ctx context.Context, alumni *model.Alumni) (*model.Alumni, error) {
 	alumni.ID = primitive.NilObjectID
@@ -63,11 +43,6 @@ func (r *AlumniRepository) CreateAlumni(ctx context.Context, alumni *model.Alumn
 	}
 
 	alumni.ID = result.InsertedID.(primitive.ObjectID)
-
-	if err := r.populateRole(ctx, alumni); err != nil {
-		return alumni, nil
-	}
-
 	return alumni, nil
 }
 
@@ -87,10 +62,6 @@ func (r *AlumniRepository) FindAlumniByID(ctx context.Context, id string) (*mode
 		return nil, err
 	}
 
-	if err := r.populateRole(ctx, &alumni); err != nil {
-		return &alumni, nil
-	}
-
 	return &alumni, nil
 }
 
@@ -102,10 +73,6 @@ func (r *AlumniRepository) FindAlumniByEmail(ctx context.Context, email string) 
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
-		return nil, err
-	}
-
-	if err := r.populateRole(ctx, &alumni); err != nil {
 		return nil, err
 	}
 
@@ -123,10 +90,6 @@ func (r *AlumniRepository) FindAlumniByNIM(ctx context.Context, nim string) (*mo
 		return nil, err
 	}
 
-	if err := r.populateRole(ctx, &alumni); err != nil {
-		return &alumni, nil
-	}
-
 	return &alumni, nil
 }
 
@@ -142,11 +105,6 @@ func (r *AlumniRepository) FindAllAlumni(ctx context.Context) ([]model.Alumni, e
 		return nil, err
 	}
 
-	for i := range alumniList {
-		if err := r.populateRole(ctx, &alumniList[i]); err != nil {
-			continue
-		}
-	}
 
 	return alumniList, nil
 }
@@ -167,7 +125,7 @@ func (r *AlumniRepository) UpdateAlumni(ctx context.Context, id string, alumni *
 			"email":       alumni.Email,
 			"no_telepon":  alumni.NoTelepon,
 			"alamat":      alumni.Alamat,
-			"role_id":     alumni.RoleID,
+			"role":        alumni.Role,
 			"updated_at":  time.Now(),
 		},
 	}
@@ -196,7 +154,7 @@ func (r *AlumniRepository) DeleteAlumni(ctx context.Context, id string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.New("Data alumni tidak ditemukan")
+		return errors.New("data alumni tidak ditemukan")
 	}
 
 	return nil

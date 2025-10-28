@@ -60,18 +60,10 @@ func (s *AuthService) LoginService(c *fiber.Ctx) error {
 		})
 	}
 
-	if alumni.Role == nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Data role tidak ditemukan untuk alumni ini.",
-		})
-	}
-
 	alumniToken := utilsmongo.AlumniToken{
 		ID:     alumni.ID.Hex(),
 		Email:  alumni.Email,
-		RoleID: alumni.RoleID.Hex(),
-		Role:   alumni.Role.Nama,
+		Role:   alumni.Role,
 	}
 
 	token, err := utilsmongo.GenerateToken(alumniToken)

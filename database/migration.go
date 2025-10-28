@@ -13,24 +13,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// RunMigrations menjalankan semua migration steps untuk MongoDB
 func RunMigrations(db *mongo.Database) error {
 	log.Println("Starting MongoDB migrations...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// 1. Drop existing collections (development mode)
 	if err := dropCollections(ctx, db); err != nil {
 		return err
 	}
 
-	// 2. Create indexes
 	if err := createIndexes(ctx, db); err != nil {
 		return err
 	}
 
-	// 3. Seed data
 	if err := seedData(ctx, db); err != nil {
 		return err
 	}
@@ -39,16 +35,14 @@ func RunMigrations(db *mongo.Database) error {
 	return nil
 }
 
-// dropCollections menghapus semua collections yang ada
 func dropCollections(ctx context.Context, db *mongo.Database) error {
 	log.Println("Dropping existing collections...")
 
-	collections := []string{"roles", "alumni", "pekerjaan_alumni", "files"}
+	collections := []string{"alumni", "pekerjaan_alumni", "files"}
 	
 	for _, collectionName := range collections {
 		collection := db.Collection(collectionName)
 		
-		// Check if collection exists
 		names, err := db.ListCollectionNames(ctx, bson.M{"name": collectionName})
 		if err != nil {
 			log.Printf("Warning: Could not check collection %s: %v", collectionName, err)
@@ -67,24 +61,10 @@ func dropCollections(ctx context.Context, db *mongo.Database) error {
 	return nil
 }
 
-// createIndexes membuat semua indexes yang diperlukan
 func createIndexes(ctx context.Context, db *mongo.Database) error {
 	log.Println("Creating indexes...")
 
-	// Roles collection indexes
-	rolesCollection := db.Collection("roles")
-	roleIndexes := []mongo.IndexModel{
-		{
-			Keys:    bson.D{{Key: "nama", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-	}
-	if _, err := rolesCollection.Indexes().CreateMany(ctx, roleIndexes); err != nil {
-		return err
-	}
-	log.Println("Created indexes for roles collection")
 
-	// Alumni collection indexes
 	alumniCollection := db.Collection("alumni")
 	alumniIndexes := []mongo.IndexModel{
 		{
@@ -96,7 +76,7 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys: bson.D{{Key: "role_id", Value: 1}},
+			Keys: bson.D{{Key: "role", Value: 1}},
 		},
 	}
 	if _, err := alumniCollection.Indexes().CreateMany(ctx, alumniIndexes); err != nil {
@@ -104,11 +84,10 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 	}
 	log.Println("Created indexes for alumni collection")
 
-	// Pekerjaan Alumni collection indexes
 	pekerjaanCollection := db.Collection("pekerjaan_alumni")
 	pekerjaanIndexes := []mongo.IndexModel{
 		{
-			Keys: bson.D{{Key: "alumni_id", Value: 1}},
+			Keys: bson.D{{Key: "alumni_info.alumni_id", Value: 1}},
 		},
 		{
 			Keys: bson.D{{Key: "status_pekerjaan", Value: 1}},
@@ -119,11 +98,10 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 	}
 	log.Println("Created indexes for pekerjaan_alumni collection")
 
-	// Files collection indexes
 	filesCollection := db.Collection("files")
 	filesIndexes := []mongo.IndexModel{
 		{
-			Keys: bson.D{{Key: "alumni_id", Value: 1}},
+			Keys: bson.D{{Key: "alumni_info.alumni_id", Value: 1}},
 		},
 		{
 			Keys: bson.D{{Key: "category", Value: 1}},
@@ -140,23 +118,14 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 	return nil
 }
 
-// seedData mengisi data awal ke semua collections
 func seedData(ctx context.Context, db *mongo.Database) error {
 	log.Println("Seeding initial data...")
 
-	// 1. Seed roles first
-	roleIDs, err := seedRoles(ctx, db)
+	alumniIDs, err := seedAlumni(ctx, db)
 	if err != nil {
 		return err
 	}
 
-	// 2. Seed alumni
-	alumniIDs, err := seedAlumni(ctx, db, roleIDs)
-	if err != nil {
-		return err
-	}
-
-	// 3. Seed pekerjaan alumni
 	if err := seedPekerjaanAlumni(ctx, db, alumniIDs); err != nil {
 		return err
 	}
@@ -165,43 +134,10 @@ func seedData(ctx context.Context, db *mongo.Database) error {
 	return nil
 }
 
-// seedRoles mengisi data roles dan mengembalikan map nama -> ObjectID
-func seedRoles(ctx context.Context, db *mongo.Database) (map[string]primitive.ObjectID, error) {
-	log.Println("Seeding roles...")
 
-	roles := []interface{}{
-		bson.M{
-			"nama":       "admin",
-			"created_at": time.Now(),
-			"updated_at": time.Now(),
-		},
-		bson.M{
-			"nama":       "user",
-			"created_at": time.Now(),
-			"updated_at": time.Now(),
-		},
-	}
-
-	collection := db.Collection("roles")
-	result, err := collection.InsertMany(ctx, roles)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create map nama -> ObjectID
-	roleMap := make(map[string]primitive.ObjectID)
-	roleMap["admin"] = result.InsertedIDs[0].(primitive.ObjectID)
-	roleMap["user"] = result.InsertedIDs[1].(primitive.ObjectID)
-
-	log.Printf("Inserted %d roles", len(result.InsertedIDs))
-	return roleMap, nil
-}
-
-// seedAlumni mengisi data alumni dan mengembalikan slice ObjectID
-func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]primitive.ObjectID) ([]primitive.ObjectID, error) {
+func seedAlumni(ctx context.Context, db *mongo.Database) ([]primitive.ObjectID, error) {
 	log.Println("Seeding alumni...")
 
-	// Generate password hash untuk semua alumni (password: "123456")
 	passwordHash, err := utilsmongo.HashPassword("123456")
 	if err != nil {
 		return nil, err
@@ -218,7 +154,7 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 			"password_hash": passwordHash,
 			"no_telepon":    "081359528944",
 			"alamat":        "JL BIBIS TAMA 1A NO 22",
-			"role_id":       roleIDs["admin"],
+			"role":          "admin",
 			"created_at":    time.Now(),
 			"updated_at":    time.Now(),
 		},
@@ -232,7 +168,7 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 			"password_hash": passwordHash,
 			"no_telepon":    "081234567891",
 			"alamat":        "Jl. Diponegoro No. 2, Malang",
-			"role_id":       roleIDs["user"],
+			"role":          "user",
 			"created_at":    time.Now(),
 			"updated_at":    time.Now(),
 		},
@@ -246,7 +182,7 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 			"password_hash": passwordHash,
 			"no_telepon":    "081234567892",
 			"alamat":        "Jl. Sudirman No. 3, Jakarta",
-			"role_id":       roleIDs["user"],
+			"role":          "user",
 			"created_at":    time.Now(),
 			"updated_at":    time.Now(),
 		},
@@ -260,7 +196,7 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 			"password_hash": passwordHash,
 			"no_telepon":    "081234567893",
 			"alamat":        "Jl. Gatot Subroto No. 4, Bandung",
-			"role_id":       roleIDs["user"],
+			"role":          "user",
 			"created_at":    time.Now(),
 			"updated_at":    time.Now(),
 		},
@@ -274,7 +210,7 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 			"password_hash": passwordHash,
 			"no_telepon":    "081234567894",
 			"alamat":        "Jl. Thamrin No. 5, Medan",
-			"role_id":       roleIDs["user"],
+			"role":          "user",
 			"created_at":    time.Now(),
 			"updated_at":    time.Now(),
 		},
@@ -286,7 +222,6 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 		return nil, err
 	}
 
-	// Convert InsertedIDs to ObjectID slice
 	alumniIDs := make([]primitive.ObjectID, len(result.InsertedIDs))
 	for i, id := range result.InsertedIDs {
 		alumniIDs[i] = id.(primitive.ObjectID)
@@ -296,13 +231,17 @@ func seedAlumni(ctx context.Context, db *mongo.Database, roleIDs map[string]prim
 	return alumniIDs, nil
 }
 
-// seedPekerjaanAlumni mengisi data pekerjaan alumni
 func seedPekerjaanAlumni(ctx context.Context, db *mongo.Database, alumniIDs []primitive.ObjectID) error {
 	log.Println("Seeding pekerjaan alumni...")
 
 	pekerjaan := []interface{}{
 		bson.M{
-			"alumni_id":            alumniIDs[0], // Andino Ferdiansah
+			"alumni_info": bson.M{
+				"alumni_id": alumniIDs[0],
+				"nim":       "2021001",
+				"nama":      "Andino Ferdiansah",
+				"email":     "andinoferdiansah@gmail.com",
+			},
 			"nama_perusahaan":      "PT. Tech Solutions",
 			"posisi_jabatan":       "Software Developer",
 			"bidang_industri":      "Teknologi",
@@ -315,7 +254,12 @@ func seedPekerjaanAlumni(ctx context.Context, db *mongo.Database, alumniIDs []pr
 			"updated_at":           time.Now(),
 		},
 		bson.M{
-			"alumni_id":            alumniIDs[1], // Siti Nurhaliza
+			"alumni_info": bson.M{
+				"alumni_id": alumniIDs[1], 
+				"nim":       "2021002",
+				"nama":      "Siti Nurhaliza",
+				"email":     "siti.nurhaliza@email.com",
+			},
 			"nama_perusahaan":      "PT. Digital Innovation",
 			"posisi_jabatan":       "System Analyst",
 			"bidang_industri":      "Teknologi",
@@ -328,7 +272,12 @@ func seedPekerjaanAlumni(ctx context.Context, db *mongo.Database, alumniIDs []pr
 			"updated_at":           time.Now(),
 		},
 		bson.M{
-			"alumni_id":            alumniIDs[2], // Budi Santoso
+			"alumni_info": bson.M{
+				"alumni_id": alumniIDs[2],
+				"nim":       "2020001",
+				"nama":      "Budi Santoso",
+				"email":     "budi.santoso@email.com",
+			},
 			"nama_perusahaan":      "PT. Data Analytics",
 			"posisi_jabatan":       "Data Scientist",
 			"bidang_industri":      "Teknologi",
@@ -341,7 +290,12 @@ func seedPekerjaanAlumni(ctx context.Context, db *mongo.Database, alumniIDs []pr
 			"updated_at":           time.Now(),
 		},
 		bson.M{
-			"alumni_id":            alumniIDs[3], // Maria Garcia
+			"alumni_info": bson.M{
+				"alumni_id": alumniIDs[3], 
+				"nim":       "2022001",
+				"nama":      "Maria Garcia",
+				"email":     "maria.garcia@email.com",
+			},
 			"nama_perusahaan":      "PT. Cloud Computing",
 			"posisi_jabatan":       "DevOps Engineer",
 			"bidang_industri":      "Teknologi",
@@ -354,7 +308,12 @@ func seedPekerjaanAlumni(ctx context.Context, db *mongo.Database, alumniIDs []pr
 			"updated_at":           time.Now(),
 		},
 		bson.M{
-			"alumni_id":            alumniIDs[4], // John Smith
+			"alumni_info": bson.M{
+				"alumni_id": alumniIDs[4], 
+				"nim":       "2022002",
+				"nama":      "John Smith",
+				"email":     "john.smith@email.com",
+			},
 			"nama_perusahaan":      "PT. Mobile Apps",
 			"posisi_jabatan":       "Mobile Developer",
 			"bidang_industri":      "Teknologi",

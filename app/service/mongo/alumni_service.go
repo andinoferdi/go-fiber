@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AlumniService struct {
@@ -82,11 +81,10 @@ func (s *AlumniService) CreateAlumniService(c *fiber.Ctx) error {
 		})
 	}
 
-	roleObjID, err := primitive.ObjectIDFromHex(req.RoleID)
-	if err != nil {
+	if req.Role != "admin" && req.Role != "user" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"message": "Role ID tidak valid.",
+			"message": "Role tidak valid. Gunakan 'admin' atau 'user'.",
 		})
 	}
 
@@ -111,7 +109,7 @@ func (s *AlumniService) CreateAlumniService(c *fiber.Ctx) error {
 		PasswordHash: passwordHash,
 		NoTelepon:    req.NoTelepon,
 		Alamat:       req.Alamat,
-		RoleID:       roleObjID,
+		Role:         req.Role,
 	}
 
 	createdAlumni, err := s.repo.CreateAlumni(ctx, alumni)
@@ -146,11 +144,10 @@ func (s *AlumniService) UpdateAlumniService(c *fiber.Ctx) error {
 		})
 	}
 
-	roleObjID, err := primitive.ObjectIDFromHex(req.RoleID)
-	if err != nil {
+	if req.Role != "admin" && req.Role != "user" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"message": "Role ID tidak valid.",
+			"message": "Role tidak valid. Gunakan 'admin' atau 'user'.",
 		})
 	}
 
@@ -180,7 +177,7 @@ func (s *AlumniService) UpdateAlumniService(c *fiber.Ctx) error {
 		Email:      req.Email,
 		NoTelepon:  req.NoTelepon,
 		Alamat:     req.Alamat,
-		RoleID:     roleObjID,
+		Role:       req.Role,
 	}
 
 	updatedAlumni, err := s.repo.UpdateAlumni(ctx, id, alumni)

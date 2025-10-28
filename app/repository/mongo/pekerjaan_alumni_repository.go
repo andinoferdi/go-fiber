@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	model "go-fiber/app/model/mongo"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,6 +32,9 @@ func NewPekerjaanAlumniRepository(db *mongo.Database) IPekerjaanAlumniRepository
 
 func (r *PekerjaanAlumniRepository) CreatePekerjaanAlumni(ctx context.Context, pekerjaan *model.PekerjaanAlumni) (*model.PekerjaanAlumni, error) {
 	pekerjaan.ID = primitive.NilObjectID
+	pekerjaan.CreatedAt = time.Now()
+	pekerjaan.UpdatedAt = time.Now()
+
 	result, err := r.collection.InsertOne(ctx, pekerjaan)
 	if err != nil {
 		return nil, err
@@ -77,10 +81,10 @@ func (r *PekerjaanAlumniRepository) FindAllPekerjaanAlumni(ctx context.Context) 
 func (r *PekerjaanAlumniRepository) FindPekerjaanAlumniByAlumniID(ctx context.Context, alumniID string) ([]model.PekerjaanAlumni, error) {
 	objID, err := primitive.ObjectIDFromHex(alumniID)
 	if err != nil {
-		return nil, errors.New("Alumni ID tidak valid")
+		return nil, errors.New("alumni ID tidak valid")
 	}
 
-	filter := bson.M{"alumni_id": objID}
+	filter := bson.M{"alumni_info.alumni_id": objID}
 	cursor, err := r.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -104,6 +108,7 @@ func (r *PekerjaanAlumniRepository) UpdatePekerjaanAlumni(ctx context.Context, i
 	filter := bson.M{"_id": objID}
 	update := bson.M{
 		"$set": bson.M{
+			"alumni_info":          pekerjaan.AlumniInfo,
 			"nama_perusahaan":      pekerjaan.NamaPerusahaan,
 			"posisi_jabatan":       pekerjaan.PosisiJabatan,
 			"bidang_industri":      pekerjaan.BidangIndustri,
@@ -141,7 +146,7 @@ func (r *PekerjaanAlumniRepository) DeletePekerjaanAlumni(ctx context.Context, i
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.New("Data pekerjaan alumni tidak ditemukan")
+		return errors.New("data pekerjaan alumni tidak ditemukan")
 	}
 
 	return nil
