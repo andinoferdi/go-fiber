@@ -29,16 +29,117 @@ func NewFileService(repo repository.IFileRepository, alumniRepo repository.IAlum
 	}
 }
 
+// @Summary Dapatkan semua file
+// @Description Mengambil daftar semua file dari database
+// @Tags 4. Files
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} model.SuccessResponse{data=[]model.FileResponse}
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /files [get]
+func (s *FileService) GetAllFilesService(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filesList, err := s.repo.FindAllFiles(ctx)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data file dari database. Detail: " + err.Error(),
+		})
+	}
+
+	var responses []model.FileResponse
+	for _, file := range filesList {
+		responses = append(responses, *s.toFileResponse(&file))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Data file berhasil diambil dari database.",
+		"data":    responses,
+	})
+}
+
+// @Summary Dapatkan file berdasarkan ID
+// @Description Mengambil data file spesifik berdasarkan ID
+// @Tags 4. Files
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "File ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse{data=model.FileResponse}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /files/{id} [get]
+func (s *FileService) GetFileByIDService(c *fiber.Ctx) error {
+	id := c.Params("id")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	file, err := s.repo.FindFileByID(ctx, id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error mengambil data file dari database. Detail: " + err.Error(),
+		})
+	}
+
+	if file == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "Data file dengan ID tersebut tidak ditemukan di database.",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Data file berhasil diambil dari database.",
+		"data":    s.toFileResponse(file),
+	})
+}
+
+// @Summary Upload foto alumni
+// @Description Upload file foto (JPEG/JPG/PNG, max 1MB)
+// @Tags 4. Files
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param file formData file true "File foto (JPEG/JPG/PNG, max 1MB)"
+// @Param alumni_id formData string true "Alumni ID (MongoDB ObjectID)"
+// @Success 201 {object} model.SuccessResponse{data=model.FileResponse}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /files/upload/foto [post]
 func (s *FileService) UploadFotoService(c *fiber.Ctx) error {
 	return s.uploadFile(c, "foto", []string{"image/jpeg", "image/jpg", "image/png"}, 1*1024*1024)
 }
 
+// @Summary Upload sertifikat alumni
+// @Description Upload file sertifikat (PDF, max 2MB)
+// @Tags 4. Files
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param file formData file true "File sertifikat (PDF, max 2MB)"
+// @Param alumni_id formData string true "Alumni ID (MongoDB ObjectID)"
+// @Success 201 {object} model.SuccessResponse{data=model.FileResponse}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /files/upload/sertifikat [post]
 func (s *FileService) UploadSertifikatService(c *fiber.Ctx) error {
 	return s.uploadFile(c, "sertifikat", []string{"application/pdf"}, 2*1024*1024)
 }
 
 func (s *FileService) uploadFile(c *fiber.Ctx, category string, allowedTypes []string, maxSize int64) error {
-	// Debug: cek semua form values
 	form, err := c.MultipartForm()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -48,7 +149,6 @@ func (s *FileService) uploadFile(c *fiber.Ctx, category string, allowedTypes []s
 		})
 	}
 
-	// Debug: log semua form values
 	fmt.Printf("Form values: %+v\n", form.Value)
 	fmt.Printf("Form files: %+v\n", form.File)
 
@@ -189,6 +289,19 @@ func (s *FileService) uploadFile(c *fiber.Ctx, category string, allowedTypes []s
 	})
 }
 
+// @Summary Dapatkan file berdasarkan Alumni ID
+// @Description Mengambil semua file dari alumni tertentu
+// @Tags 4. Files
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param alumni_id path string true "Alumni ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse{data=[]model.FileResponse}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /files/alumni/{alumni_id} [get]
 func (s *FileService) GetFilesByAlumniIDService(c *fiber.Ctx) error {
 	alumniID := c.Params("alumni_id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -215,6 +328,19 @@ func (s *FileService) GetFilesByAlumniIDService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Hapus file
+// @Description Menghapus file berdasarkan ID dari database dan storage
+// @Tags 4. Files
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "File ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /files/{id} [delete]
 func (s *FileService) DeleteFileService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

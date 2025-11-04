@@ -19,6 +19,17 @@ func NewAuthService(alumniRepo repository.IAlumniRepository) *AuthService {
 	return &AuthService{alumniRepo: alumniRepo}
 }
 
+// @Summary Login pengguna
+// @Description Login dengan email dan password untuk mendapatkan JWT token
+// @Tags 1. Authentication
+// @Accept json
+// @Produce json
+// @Param body body modelMongo.LoginRequest true "Login credentials"
+// @Success 200 {object} modelMongo.SuccessResponse{data=modelMongo.LoginResponse}
+// @Failure 400 {object} modelMongo.ErrorResponse
+// @Failure 401 {object} modelMongo.ErrorResponse
+// @Failure 500 {object} modelMongo.ErrorResponse
+// @Router /login [post]
 func (s *AuthService) LoginService(c *fiber.Ctx) error {
 	var req modelMongo.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -84,6 +95,15 @@ func (s *AuthService) LoginService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Dapatkan profil pengguna
+// @Description Mendapatkan informasi profil dari JWT token
+// @Tags 1. Authentication
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} modelMongo.GetProfileResponse
+// @Failure 401 {object} modelMongo.ErrorResponse
+// @Router /profile [get]
 func (s *AuthService) GetProfileService(c *fiber.Ctx) error {
 	alumniID := c.Locals("alumni_id")
 	email := c.Locals("email")

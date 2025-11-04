@@ -1,0 +1,1133 @@
+basePath: /go-fiber-mongo
+definitions:
+  go-fiber_app_model_mongo.Alumni:
+    properties:
+      alamat:
+        type: string
+      angkatan:
+        type: integer
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      jurusan:
+        type: string
+      nama:
+        type: string
+      nim:
+        type: string
+      no_telepon:
+        type: string
+      role:
+        type: string
+      tahun_lulus:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  go-fiber_app_model_mongo.CreateAlumniRequest:
+    properties:
+      alamat:
+        type: string
+      angkatan:
+        type: integer
+      email:
+        type: string
+      jurusan:
+        type: string
+      nama:
+        type: string
+      nim:
+        type: string
+      no_telepon:
+        type: string
+      password:
+        type: string
+      role:
+        enum:
+        - admin
+        - user
+        type: string
+      tahun_lulus:
+        type: integer
+    required:
+    - angkatan
+    - email
+    - jurusan
+    - nama
+    - nim
+    - password
+    - role
+    - tahun_lulus
+    type: object
+  go-fiber_app_model_mongo.CreatePekerjaanAlumniRequest:
+    properties:
+      alumni_info:
+        $ref: '#/definitions/model.AlumniInfo'
+      bidang_industri:
+        type: string
+      deskripsi_pekerjaan:
+        type: string
+      gaji_range:
+        type: string
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        enum:
+        - aktif
+        - selesai
+        - resigned
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      tanggal_selesai_kerja:
+        type: string
+    required:
+    - alumni_info
+    - bidang_industri
+    - lokasi_kerja
+    - nama_perusahaan
+    - posisi_jabatan
+    - status_pekerjaan
+    - tanggal_mulai_kerja
+    type: object
+  go-fiber_app_model_mongo.GetProfileResponse:
+    properties:
+      data:
+        properties:
+          alumni_id:
+            type: string
+          email:
+            type: string
+          role:
+            type: string
+        type: object
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  go-fiber_app_model_mongo.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  go-fiber_app_model_mongo.LoginResponse:
+    properties:
+      alumni:
+        $ref: '#/definitions/go-fiber_app_model_mongo.Alumni'
+      token:
+        type: string
+    type: object
+  go-fiber_app_model_mongo.PekerjaanAlumni:
+    properties:
+      alumni_info:
+        $ref: '#/definitions/model.AlumniInfo'
+      bidang_industri:
+        type: string
+      created_at:
+        type: string
+      deskripsi_pekerjaan:
+        type: string
+      gaji_range:
+        type: string
+      id:
+        type: string
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      tanggal_selesai_kerja:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  go-fiber_app_model_mongo.UpdateAlumniRequest:
+    properties:
+      alamat:
+        type: string
+      angkatan:
+        type: integer
+      email:
+        type: string
+      jurusan:
+        type: string
+      nama:
+        type: string
+      no_telepon:
+        type: string
+      role:
+        enum:
+        - admin
+        - user
+        type: string
+      tahun_lulus:
+        type: integer
+    required:
+    - angkatan
+    - email
+    - jurusan
+    - nama
+    - role
+    - tahun_lulus
+    type: object
+  go-fiber_app_model_mongo.UpdatePekerjaanAlumniRequest:
+    properties:
+      bidang_industri:
+        type: string
+      deskripsi_pekerjaan:
+        type: string
+      gaji_range:
+        type: string
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        enum:
+        - aktif
+        - selesai
+        - resigned
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      tanggal_selesai_kerja:
+        type: string
+    required:
+    - bidang_industri
+    - lokasi_kerja
+    - nama_perusahaan
+    - posisi_jabatan
+    - status_pekerjaan
+    - tanggal_mulai_kerja
+    type: object
+  model.AlumniInfo:
+    properties:
+      alumni_id:
+        type: string
+      email:
+        type: string
+      nama:
+        type: string
+      nim:
+        type: string
+    type: object
+  model.ErrorResponse:
+    properties:
+      message:
+        example: Error message
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+  model.FileResponse:
+    properties:
+      alumni_info:
+        $ref: '#/definitions/model.AlumniInfo'
+      category:
+        type: string
+      created_at:
+        type: string
+      file_name:
+        type: string
+      file_path:
+        type: string
+      file_size:
+        type: integer
+      file_type:
+        type: string
+      id:
+        type: string
+      original_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        example: Operasi berhasil
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: API untuk mengelola data alumni, pekerjaan, dan file menggunakan MongoDB
+    dengan JWT Authentication
+  title: Alumni Management System API - MongoDB
+  version: "1.0"
+paths:
+  /alumni:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil daftar semua alumni dari database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/go-fiber_app_model_mongo.Alumni'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan semua alumni
+      tags:
+      - 2. Alumni
+    post:
+      consumes:
+      - application/json
+      description: Membuat data alumni baru (Admin only)
+      parameters:
+      - description: Alumni data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-fiber_app_model_mongo.CreateAlumniRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.Alumni'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buat alumni baru
+      tags:
+      - 2. Alumni
+  /alumni/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus alumni berdasarkan ID (Admin only)
+      parameters:
+      - description: Alumni ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus alumni
+      tags:
+      - 2. Alumni
+    get:
+      consumes:
+      - application/json
+      description: Mengambil data alumni spesifik berdasarkan ID
+      parameters:
+      - description: Alumni ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.Alumni'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan alumni berdasarkan ID
+      tags:
+      - 2. Alumni
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data alumni berdasarkan ID (Admin only)
+      parameters:
+      - description: Alumni ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Alumni data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-fiber_app_model_mongo.UpdateAlumniRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.Alumni'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update alumni
+      tags:
+      - 2. Alumni
+  /alumni/check/{key}:
+    post:
+      consumes:
+      - application/json
+      description: Mengecek apakah NIM terdaftar sebagai alumni (memerlukan API key)
+      parameters:
+      - description: API Key untuk validasi akses
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: NIM mahasiswa yang akan dicek
+        in: formData
+        name: nim
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Cek status alumni berdasarkan NIM
+      tags:
+      - 2. Alumni
+  /files:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil daftar semua file dari database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.FileResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan semua file
+      tags:
+      - 4. Files
+  /files/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus file berdasarkan ID dari database dan storage
+      parameters:
+      - description: File ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus file
+      tags:
+      - 4. Files
+    get:
+      consumes:
+      - application/json
+      description: Mengambil data file spesifik berdasarkan ID
+      parameters:
+      - description: File ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.FileResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan file berdasarkan ID
+      tags:
+      - 4. Files
+  /files/alumni/{alumni_id}:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil semua file dari alumni tertentu
+      parameters:
+      - description: Alumni ID (MongoDB ObjectID)
+        in: path
+        name: alumni_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.FileResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan file berdasarkan Alumni ID
+      tags:
+      - 4. Files
+  /files/upload/foto:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload file foto (JPEG/JPG/PNG, max 1MB)
+      parameters:
+      - description: File foto (JPEG/JPG/PNG, max 1MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Alumni ID (MongoDB ObjectID)
+        in: formData
+        name: alumni_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.FileResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload foto alumni
+      tags:
+      - 4. Files
+  /files/upload/sertifikat:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload file sertifikat (PDF, max 2MB)
+      parameters:
+      - description: File sertifikat (PDF, max 2MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Alumni ID (MongoDB ObjectID)
+        in: formData
+        name: alumni_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.FileResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload sertifikat alumni
+      tags:
+      - 4. Files
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login dengan email dan password untuk mendapatkan JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-fiber_app_model_mongo.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Login pengguna
+      tags:
+      - 1. Authentication
+  /pekerjaan:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil daftar semua pekerjaan alumni dari database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/go-fiber_app_model_mongo.PekerjaanAlumni'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan semua pekerjaan alumni
+      tags:
+      - 3. Pekerjaan Alumni
+    post:
+      consumes:
+      - application/json
+      description: Membuat data pekerjaan alumni baru (Admin only)
+      parameters:
+      - description: Pekerjaan alumni data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-fiber_app_model_mongo.CreatePekerjaanAlumniRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.PekerjaanAlumni'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buat pekerjaan alumni baru
+      tags:
+      - 3. Pekerjaan Alumni
+  /pekerjaan/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus pekerjaan alumni berdasarkan ID (Admin only)
+      parameters:
+      - description: Pekerjaan ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus pekerjaan alumni
+      tags:
+      - 3. Pekerjaan Alumni
+    get:
+      consumes:
+      - application/json
+      description: Mengambil data pekerjaan alumni spesifik berdasarkan ID
+      parameters:
+      - description: Pekerjaan ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.PekerjaanAlumni'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan pekerjaan alumni berdasarkan ID
+      tags:
+      - 3. Pekerjaan Alumni
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data pekerjaan alumni berdasarkan ID (Admin only)
+      parameters:
+      - description: Pekerjaan ID (MongoDB ObjectID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Pekerjaan alumni data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-fiber_app_model_mongo.UpdatePekerjaanAlumniRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-fiber_app_model_mongo.PekerjaanAlumni'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update pekerjaan alumni
+      tags:
+      - 3. Pekerjaan Alumni
+  /pekerjaan/alumni/{alumni_id}:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil semua pekerjaan dari alumni tertentu (Admin only)
+      parameters:
+      - description: Alumni ID (MongoDB ObjectID)
+        in: path
+        name: alumni_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/go-fiber_app_model_mongo.PekerjaanAlumni'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan pekerjaan berdasarkan Alumni ID
+      tags:
+      - 3. Pekerjaan Alumni
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan informasi profil dari JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-fiber_app_model_mongo.GetProfileResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dapatkan profil pengguna
+      tags:
+      - 1. Authentication
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: 'Masukkan token JWT dengan format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: Operasi autentikasi dan profil pengguna
+  name: 1. Authentication
+- description: Operasi CRUD untuk data alumni
+  name: 2. Alumni
+- description: Operasi CRUD untuk data pekerjaan alumni
+  name: 3. Pekerjaan Alumni
+- description: Operasi upload dan manajemen file
+  name: 4. Files

@@ -17,6 +17,16 @@ func NewPekerjaanAlumniService(repo repository.IPekerjaanAlumniRepository) *Peke
 	return &PekerjaanAlumniService{repo: repo}
 }
 
+// @Summary Dapatkan semua pekerjaan alumni
+// @Description Mengambil daftar semua pekerjaan alumni dari database
+// @Tags 3. Pekerjaan Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} model.SuccessResponse{data=[]model.PekerjaanAlumni}
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /pekerjaan [get]
 func (s *PekerjaanAlumniService) GetAllPekerjaanAlumniService(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -36,6 +46,19 @@ func (s *PekerjaanAlumniService) GetAllPekerjaanAlumniService(c *fiber.Ctx) erro
 	})
 }
 
+// @Summary Dapatkan pekerjaan alumni berdasarkan ID
+// @Description Mengambil data pekerjaan alumni spesifik berdasarkan ID
+// @Tags 3. Pekerjaan Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Pekerjaan ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse{data=model.PekerjaanAlumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /pekerjaan/{id} [get]
 func (s *PekerjaanAlumniService) GetPekerjaanAlumniByIDService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -63,6 +86,19 @@ func (s *PekerjaanAlumniService) GetPekerjaanAlumniByIDService(c *fiber.Ctx) err
 	})
 }
 
+// @Summary Dapatkan pekerjaan berdasarkan Alumni ID
+// @Description Mengambil semua pekerjaan dari alumni tertentu (Admin only)
+// @Tags 3. Pekerjaan Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param alumni_id path string true "Alumni ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse{data=[]model.PekerjaanAlumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /pekerjaan/alumni/{alumni_id} [get]
 func (s *PekerjaanAlumniService) GetPekerjaanAlumniByAlumniIDService(c *fiber.Ctx) error {
 	alumniID := c.Params("alumni_id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -83,6 +119,19 @@ func (s *PekerjaanAlumniService) GetPekerjaanAlumniByAlumniIDService(c *fiber.Ct
 	})
 }
 
+// @Summary Buat pekerjaan alumni baru
+// @Description Membuat data pekerjaan alumni baru (Admin only)
+// @Tags 3. Pekerjaan Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body model.CreatePekerjaanAlumniRequest true "Pekerjaan alumni data"
+// @Success 201 {object} model.SuccessResponse{data=model.PekerjaanAlumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /pekerjaan [post]
 func (s *PekerjaanAlumniService) CreatePekerjaanAlumniService(c *fiber.Ctx) error {
 	var req model.CreatePekerjaanAlumniRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -169,6 +218,21 @@ func (s *PekerjaanAlumniService) CreatePekerjaanAlumniService(c *fiber.Ctx) erro
 	})
 }
 
+// @Summary Update pekerjaan alumni
+// @Description Memperbarui data pekerjaan alumni berdasarkan ID (Admin only)
+// @Tags 3. Pekerjaan Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Pekerjaan ID (MongoDB ObjectID)"
+// @Param body body model.UpdatePekerjaanAlumniRequest true "Pekerjaan alumni data"
+// @Success 200 {object} model.SuccessResponse{data=model.PekerjaanAlumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /pekerjaan/{id} [put]
 func (s *PekerjaanAlumniService) UpdatePekerjaanAlumniService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var req model.UpdatePekerjaanAlumniRequest
@@ -261,6 +325,20 @@ func (s *PekerjaanAlumniService) UpdatePekerjaanAlumniService(c *fiber.Ctx) erro
 	})
 }
 
+// @Summary Hapus pekerjaan alumni
+// @Description Menghapus pekerjaan alumni berdasarkan ID (Admin only)
+// @Tags 3. Pekerjaan Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Pekerjaan ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /pekerjaan/{id} [delete]
 func (s *PekerjaanAlumniService) DeletePekerjaanAlumniService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

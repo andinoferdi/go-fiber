@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -68,9 +69,20 @@ func ValidateToken(tokenString string) (*JWTClaims, error) {
 }
 
 func ExtractTokenFromHeader(authHeader string) string {
-	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-		return authHeader[7:]
+	if authHeader == "" {
+		return ""
 	}
-	return ""
+	
+	authHeader = strings.TrimSpace(authHeader)
+	
+	if len(authHeader) > 7 && strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
+		return strings.TrimSpace(authHeader[7:])
+	}
+	
+	if len(authHeader) > 6 && strings.HasPrefix(strings.ToLower(authHeader), "bearer") {
+		return strings.TrimSpace(authHeader[6:])
+	}
+	
+	return strings.TrimSpace(authHeader)
 }
 

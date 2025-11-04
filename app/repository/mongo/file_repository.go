@@ -13,6 +13,7 @@ import (
 
 type IFileRepository interface {
 	CreateFile(ctx context.Context, file *model.File) (*model.File, error)
+	FindAllFiles(ctx context.Context) ([]model.File, error)
 	FindFilesByAlumniID(ctx context.Context, alumniID string) ([]model.File, error)
 	FindFileByID(ctx context.Context, id string) (*model.File, error)
 	DeleteFile(ctx context.Context, id string) error
@@ -40,6 +41,21 @@ func (r *FileRepository) CreateFile(ctx context.Context, file *model.File) (*mod
 
 	file.ID = result.InsertedID.(primitive.ObjectID)
 	return file, nil
+}
+
+func (r *FileRepository) FindAllFiles(ctx context.Context) ([]model.File, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var files []model.File
+	if err = cursor.All(ctx, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 func (r *FileRepository) FindFilesByAlumniID(ctx context.Context, alumniID string) ([]model.File, error) {

@@ -19,6 +19,16 @@ func NewAlumniService(repo repository.IAlumniRepository) *AlumniService {
 	return &AlumniService{repo: repo}
 }
 
+// @Summary Dapatkan semua alumni
+// @Description Mengambil daftar semua alumni dari database
+// @Tags 2. Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} model.SuccessResponse{data=[]model.Alumni}
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /alumni [get]
 func (s *AlumniService) GetAllAlumniService(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -38,6 +48,19 @@ func (s *AlumniService) GetAllAlumniService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Dapatkan alumni berdasarkan ID
+// @Description Mengambil data alumni spesifik berdasarkan ID
+// @Tags 2. Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Alumni ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse{data=model.Alumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /alumni/{id} [get]
 func (s *AlumniService) GetAlumniByIDService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -65,6 +88,19 @@ func (s *AlumniService) GetAlumniByIDService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Buat alumni baru
+// @Description Membuat data alumni baru (Admin only)
+// @Tags 2. Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body model.CreateAlumniRequest true "Alumni data"
+// @Success 201 {object} model.SuccessResponse{data=model.Alumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /alumni [post]
 func (s *AlumniService) CreateAlumniService(c *fiber.Ctx) error {
 	var req model.CreateAlumniRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -127,6 +163,21 @@ func (s *AlumniService) CreateAlumniService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Update alumni
+// @Description Memperbarui data alumni berdasarkan ID (Admin only)
+// @Tags 2. Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Alumni ID (MongoDB ObjectID)"
+// @Param body body model.UpdateAlumniRequest true "Alumni data"
+// @Success 200 {object} model.SuccessResponse{data=model.Alumni}
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /alumni/{id} [put]
 func (s *AlumniService) UpdateAlumniService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var req model.UpdateAlumniRequest
@@ -195,6 +246,20 @@ func (s *AlumniService) UpdateAlumniService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Hapus alumni
+// @Description Menghapus alumni berdasarkan ID (Admin only)
+// @Tags 2. Alumni
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Alumni ID (MongoDB ObjectID)"
+// @Success 200 {object} model.SuccessResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /alumni/{id} [delete]
 func (s *AlumniService) DeleteAlumniService(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -229,6 +294,18 @@ func (s *AlumniService) DeleteAlumniService(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Cek status alumni berdasarkan NIM
+// @Description Mengecek apakah NIM terdaftar sebagai alumni (memerlukan API key)
+// @Tags 2. Alumni
+// @Accept json
+// @Produce json
+// @Param key path string true "API Key untuk validasi akses"
+// @Param nim formData string true "NIM mahasiswa yang akan dicek"
+// @Success 200 {object} model.SuccessResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /alumni/check/{key} [post]
 func (s *AlumniService) CheckAlumniService(c *fiber.Ctx) error {
 	key := c.Params("key")
 	validAPIKey := os.Getenv("API_KEY")
